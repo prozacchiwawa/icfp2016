@@ -2,5 +2,3 @@ runapi.sh
 *~
 *.pyc
 *.snap
-*.prob
-*.svg

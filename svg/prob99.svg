@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="iso-8859-1"?><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="640" width="1210" viewBox="0 0 640 1210">
+<polygon fill="none" stroke="#ff8a65" stroke-width="2" points="323.125,70.0 385.625,135.625 382.5,263.75 316.875,326.25 252.291666667,346.041666667 227.5,311.25 253.035714286,315.535714286 254.375,260.625 320.0,198.125"/>
+<line stroke="#834" stroke-width="2" x1="893.125" y1="70.0" x2="955.625" y2="135.625"/>
+<line stroke="#834" stroke-width="2" x1="890.0" y1="198.125" x2="952.5" y2="263.75"/>
+<line stroke="#834" stroke-width="2" x1="797.5" y1="311.25" x2="822.291666667" y2="346.041666667"/>
+<line stroke="#834" stroke-width="2" x1="824.375" y1="260.625" x2="822.291666667" y2="346.041666667"/>
+<line stroke="#834" stroke-width="2" x1="893.125" y1="70.0" x2="890.0" y2="198.125"/>
+<line stroke="#834" stroke-width="2" x1="955.625" y1="135.625" x2="952.5" y2="263.75"/>
+<line stroke="#834" stroke-width="2" x1="824.375" y1="260.625" x2="952.5" y2="263.75"/>
+<line stroke="#834" stroke-width="2" x1="797.5" y1="311.25" x2="886.875" y2="326.25"/>
+<line stroke="#834" stroke-width="2" x1="955.625" y1="135.625" x2="824.375" y2="260.625"/>
+<line stroke="#834" stroke-width="2" x1="886.875" y1="326.25" x2="822.291666667" y2="346.041666667"/>
+<line stroke="#834" stroke-width="2" x1="952.5" y1="263.75" x2="886.875" y2="326.25"/>
+</svg>
