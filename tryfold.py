@@ -209,13 +209,15 @@ class Folder:
                             print 'adding %s area %s' % (newp, area)
                             newpolies.append(newp)
             polies = newpolies
-            print polies
+        self.candidate_solutions = polies
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) == 1:
-        print 'usage: tryfold.py [prob]'
+        print 'usage: tryfold.py [prob] [svg?]'
         sys.exit(1)
     p = problem.read(open(sys.argv[1]))
     f = Folder(p)
-
+    if len(sys.argv) > 2:
+        with outf = open(sys.argv[2],'w'):
+            f.showSolutions(outf)
