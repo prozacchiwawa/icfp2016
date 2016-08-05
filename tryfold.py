@@ -97,6 +97,17 @@ def planar_poly(pts,polyline):
                 return False
     return True
 
+# http://code.activestate.com/recipes/578275-2d-polygon-area/
+def poly_area(pts, poly_):
+    poly = [pts[p] for p in poly_]
+    total = 0.0
+    N = len(poly)
+    for i in range(N):
+        v1 = poly[i]
+        v2 = poly[(i+1) % N]
+        total += v1[0]*v2[1] - v1[1]*v2[0]
+    return abs(total/2)
+
 class Folder:
     def __init__(self,p):
         self.p = p
@@ -110,6 +121,7 @@ class Folder:
                 self.points.append(s[1])
             pointset.add(s[0])
             pointset.add(s[1])
+        print 'pointset %s' % pointset
         # Make a list of lines by vertex
         self.lines = []
         for line in self.p.slist:
@@ -118,23 +130,21 @@ class Folder:
             self.lines.append((a,b))
         # Break lines that contain points in the slist set
         lineset = set(self.lines)
-        allbroken = False
-        while not allbroken:
-            for s in [sa for sa in lineset]:
-                for pp in pointset:
-                    p = self.points.index(pp)
-                    if s[0] == p or s[1] == p:
-                        continue
-                    ss = (self.points[s[0]],self.points[s[1]])
-                    a = fract_dist(ss[0],ss[1])
-                    b = fract_dist(ss[1],pp)
-                    c = fract_dist(pp,ss[0])
-                    ta = triangle_area(a,b,c)
-                    if ta < epsilon and b < a:
-                        lineset.remove(s)
-                        lineset.add((s[0],p))
-                        lineset.add((p,s[1]))
-                        allbroken = True
+        for s in [sa for sa in lineset]:
+            for pp in pointset:
+                p = self.points.index(pp)
+                if s[0] == p or s[1] == p:
+                    continue
+                ss = (self.points[s[0]],self.points[s[1]])
+                a = fract_dist(ss[0],ss[1])
+                b = fract_dist(ss[1],pp)
+                c = fract_dist(pp,ss[0])
+                ta = triangle_area(a,b,c)
+                print 'area of %s,%s,%s -> %s' % (a,b,c,ta)
+                if ta < epsilon and b < a:
+                    lineset.remove(s)
+                    lineset.add((s[0],p))
+                    lineset.add((p,s[1]))
         self.lines = [l for l in lineset]
         print 'lines %s' % (self.lines)
         # Make a list of polygons as lists of vertices
@@ -183,8 +193,23 @@ class Folder:
         # We will generate a list of polygon combinations whose area sum is
         # exactly 1 as close as we can tell.
         polies = [[n] for n in range(len(self.poly_finished))]
-        #while any(lamba p: poly_area(self.points, p) < (1 - epsilon), polies):
-        #    for 
+        while any([sum([poly_area(self.points, self.poly_finished[p]) for p in poly]) < (1 - epsilon) for poly in polies]):
+            newpolies = []
+            for p in polies:
+                poly = self.poly_finished[p[0]]
+                for i in range(len(poly)):
+                    side = (poly[i],poly[(i+1)%len(poly)])
+                    if not side in poly_connections:
+                        side = (side[1],side[0])
+                    connected = poly_connections[side]
+                    for c in connected:
+                        newp = [c]+p
+                        area = sum([poly_area(self.points, self.poly_finished[poly_]) for poly_ in newp])
+                        if area < (1 - epsilon) and not newp in newpolies:
+                            print 'adding %s area %s' % (newp, area)
+                            newpolies.append(newp)
+            polies = newpolies
+            print polies
 
 if __name__ == '__main__':
     import sys
