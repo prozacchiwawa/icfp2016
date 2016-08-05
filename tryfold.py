@@ -226,16 +226,18 @@ if __name__ == '__main__':
     for sol in f.candidate_solutions:
         print sol
         square = ceil(sqrt(len(sol)))
-        square = square * square
         segs = []
-        segs.append(((0.0,0.0),(float(square),0.0)))
-        segs.append(((0.0,0.0),(0.0,float(square))))
-        segs.append(((float(square),0.0),(float(square),float(square))))
-        segs.append(((0.0,float(square)),(float(square),float(square))))
+        square_tenth = square / 10.0
+        SL = -square_tenth
+        SH = square + square_tenth
+        segs.append(((SL,SL),(SH,SL)))
+        segs.append(((SL,SL),(SL,SH)))
+        segs.append(((SH,SH),(SH,SL)))
+        segs.append(((SH,SH),(SL,SH)))
         for i,ss in enumerate(sol):
             s = f.poly_finished[ss]
-            y = floor(i / square)
-            x = i % square
+            y = floor(i / square) * 1.1
+            x = (i % square) * 1.1
             for i,v in enumerate(s):
                 p1 = f.points[v]
                 p2 = f.points[s[(i+1)%len(s)]]
