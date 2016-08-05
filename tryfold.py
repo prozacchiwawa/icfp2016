@@ -2,7 +2,7 @@ from fractions import Fraction
 import problem
 from problem import Problem
 from fract import float_of_fract, fract_dist
-from math import sqrt, fabs, ceil
+from math import sqrt, fabs, ceil, floor
 from svgvis import SVGGallery
 
 epsilon = 0.0000001
@@ -234,7 +234,7 @@ if __name__ == '__main__':
         segs.append(((0.0,float(square)),(float(square),float(square))))
         for i,ss in enumerate(sol):
             s = f.poly_finished[ss]
-            y = i / square
+            y = floor(i / square)
             x = i % square
             for i,v in enumerate(s):
                 p1 = f.points[v]
