@@ -8,7 +8,7 @@ segment_re_str = '%s %s' % (vertex_re_str.replace('x','ax').replace('y','ay'), v
 segment_re = re.compile(segment_re_str)
 
 def float_of_fract(p,off=0,scale=1):
-    return (((p.numerator / p.denominator) * scale) + off)
+    return (((float(p.numerator) / float(p.denominator)) * scale) + off)
 
 class Problem:
     def __init__(self,plist,slist):
