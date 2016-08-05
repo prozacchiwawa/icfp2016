@@ -136,6 +136,7 @@ class Folder:
                         lineset.add((p,s[1]))
                         allbroken = True
         self.lines = [l for l in lineset]
+        print 'lines %s' % (self.lines)
         # Make a list of polygons as lists of vertices
         # self.connections[n] will contain a set 
         self.connections = dict([(x,set()) for x in range(len(self.points))])
@@ -159,11 +160,31 @@ class Folder:
                     proposed = [conn]+cand
                     if planar_poly(self.points,proposed):
                         poly_candidates.append(proposed)
-        print self.points
-        print poly_finished
-        # A square is made up of polygons built from the shapes in the skeleton
-        
-            
+        self.poly_finished = []
+        poly_finished_sets = [set(p) for p in poly_finished]
+        for i, pi in enumerate(poly_finished):
+            for j in range(i+1, len(poly_finished)):
+                if poly_finished_sets[i] == poly_finished_sets[j]:
+                    break
+            else:
+                self.poly_finished.append(pi)
+        print self.poly_finished
+        poly_connections = dict([(l,set([])) for l in self.lines])
+        print poly_connections
+        for pi, p in enumerate(self.poly_finished):
+            for i in range(len(p)):
+                line = (p[i], p[(i+1)%len(p)])
+                if line in poly_connections:
+                    poly_connections[line].add(pi)
+                else:
+                    poly_connections[(line[1],line[0])].add(pi)
+        print poly_connections
+        # A square is made up of polygons built from the shapes in the skeleton.
+        # We will generate a list of polygon combinations whose area sum is
+        # exactly 1 as close as we can tell.
+        polies = [[n] for n in range(len(self.poly_finished))]
+        #while any(lamba p: poly_area(self.points, p) < (1 - epsilon), polies):
+        #    for 
 
 if __name__ == '__main__':
     import sys
