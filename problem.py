@@ -1,14 +1,12 @@
 import re
 from fractions import Fraction
+from fract import float_of_fract
 
 fraction_re_str = '(?P<xn>[-0-9]+)[ \t]*(/[ \t]*(?P<xd>[-0-9]+))?'
 vertex_re_str = '%s,%s' % (fraction_re_str, fraction_re_str.replace('x','y'))
 vertex_re = re.compile(vertex_re_str)
 segment_re_str = '%s %s' % (vertex_re_str.replace('x','ax').replace('y','ay'), vertex_re_str.replace('x','bx').replace('y','by'))
 segment_re = re.compile(segment_re_str)
-
-def float_of_fract(p,off=0,scale=1):
-    return (((float(p.numerator) / float(p.denominator)) * scale) + off)
 
 class Problem:
     def __init__(self,plist,slist):
