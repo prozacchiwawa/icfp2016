@@ -2,7 +2,8 @@ from fractions import Fraction
 import problem
 from problem import Problem
 from fract import float_of_fract, fract_dist
-from math import sqrt, fabs
+from math import sqrt, fabs, ceil
+from svgvis import SVGGallery
 
 epsilon = 0.0000001
 
@@ -193,6 +194,7 @@ class Folder:
         # We will generate a list of polygon combinations whose area sum is
         # exactly 1 as close as we can tell.
         polies = [[n] for n in range(len(self.poly_finished))]
+        finished = []
         while any([sum([poly_area(self.points, self.poly_finished[p]) for p in poly]) < (1 - epsilon) for poly in polies]):
             newpolies = []
             for p in polies:
@@ -207,9 +209,11 @@ class Folder:
                         area = sum([poly_area(self.points, self.poly_finished[poly_]) for poly_ in newp])
                         if area < (1 + epsilon) and not newp in newpolies:
                             print 'adding %s area %s' % (newp, area)
+                            if area > (1 - epsilon):
+                                finished.append(newp)
                             newpolies.append(newp)
             polies = newpolies
-        self.candidate_solutions = polies
+        self.candidate_solutions = finished
 
 if __name__ == '__main__':
     import sys
@@ -218,6 +222,28 @@ if __name__ == '__main__':
         sys.exit(1)
     p = problem.read(open(sys.argv[1]))
     f = Folder(p)
+    g = SVGGallery()
+    for sol in f.candidate_solutions:
+        print sol
+        square = ceil(sqrt(len(sol)))
+        square = square * square
+        segs = []
+        segs.append(((0.0,0.0),(float(square),0.0)))
+        segs.append(((0.0,0.0),(0.0,float(square))))
+        segs.append(((float(square),0.0),(float(square),float(square))))
+        segs.append(((0.0,float(square)),(float(square),float(square))))
+        for i,ss in enumerate(sol):
+            s = f.poly_finished[ss]
+            y = i / square
+            x = i % square
+            for i,v in enumerate(s):
+                p1 = f.points[v]
+                p2 = f.points[s[(i+1)%len(s)]]
+                p1 = (p1[0] + x, p1[1] + y)
+                p2 = (p2[0] + x, p2[1] + y)
+                segs.append((p1, p2))
+        g.addFigure('#459', segs)
+    
     if len(sys.argv) > 2:
-        with outf = open(sys.argv[2],'w'):
-            f.showSolutions(outf)
+        with open(sys.argv[2],'w') as outf:
+            outf.write(g.draw())

@@ -1,7 +1,10 @@
 from math import sqrt
 
 def float_of_fract(p,off=0,scale=1):
-    return (((float(p.numerator) / float(p.denominator)) * scale) + off)
+    if type(p) == type(0.0):
+        return (p * scale) + off
+    else:
+        return (((float(p.numerator) / float(p.denominator)) * scale) + off)
 
 def fract_dist(a,b):
     ax = float_of_fract(a[0])
