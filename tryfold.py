@@ -2,13 +2,100 @@ from fractions import Fraction
 import problem
 from problem import Problem
 from fract import float_of_fract, fract_dist
-from math import sqrt
+from math import sqrt, fabs
+
+epsilon = 0.0000001
 
 def triangle_area(a,b,c):
     p = (a+b+c) / 2
     return sqrt(p * (p - a) * (p - b) * (p - c))
 
-epsilon = 0.0000001
+# 
+# Thanks http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+# p1 & p2 are part of the first segment and p3 & p4 are part of the second segment.
+# I0 and I1 are the pointers which get set when intersection point(s) are found.
+#
+# Returns: 0 - No intersection
+#          1 - Unique intersection set in  I0
+#          2 - Segment intersection set in [I0, I1]
+#
+# Test if two line segments [p1, p2] & [p3, p4] intersect
+# To find orientation of ordered triplet (a, b, c).
+# The function returns following values
+# 0 --> a, b and c are collinear
+# 1 --> Clockwise        (Right of line formed by the segment)
+# 2 --> Counterclockwise (Left of line formed by the segment)
+def orientation(a,b,c):
+    val = (b[1] - a[1]) * (c[0] - b[0]) - (b[0] - a[0]) * (c[1] - b[1])
+    if fabs(val) < epsilon:
+        return 0 # collinear
+    elif val > 0: # clock or counterclock wise
+        return 1
+    else:
+        return 2
+
+# Tests whether or not a point c is on the segment [a, b]
+def pointOnLine(a,b,c):
+    is_collinear = orientation(a,b,c)
+
+    if (is_collinear == 0):
+        if ( min(a[0], b[0]) <= c[0] and c[0] <= max(a[0], b[0])):
+            if ( min(a[1], b[1]) <= c[1] and c[1] <= max(a[1], b[1]) ):
+                return True
+
+    return False
+
+def doIntersect(p1,p2,p3,p4):
+    o1 = orientation(p1, p2, p3)
+    o2 = orientation(p1, p2, p4)
+    o3 = orientation(p3, p4, p1)
+    o4 = orientation(p3, p4, p2)
+
+    # General case
+    if (o1 != o2 and o3 != o4):
+        return True
+
+    # Collinear special cases
+    if (o1 == 0 and pointOnLine(p1, p2, p3)):
+        return True
+    if (o2 == 0 and pointOnLine(p1, p2, p4)):
+        return True
+    if (o3 == 0 and pointOnLine(p3, p4, p1)):
+        return True
+    if (o4 == 0 and pointOnLine(p3, p4, p2)):
+        return True
+
+    return False
+
+def segment_segment_intersection (la,lb):
+    p1 = la[0]
+    p2 = la[1]
+    p3 = lb[0]
+    p4 = lb[1]
+    if p1 == p3 or p1 == p4 or p2 == p3 or p2 == p4:
+        return False
+    return doIntersect(p1, p2, p3, p4)
+
+def crossed_lines(a,b):
+    return segment_segment_intersection(a,b)
+
+def planar_poly(pts,polyline):
+    poly = []
+    for i in range(0,len(polyline)-1):
+        poly.append((polyline[i],polyline[i+1]))
+    for i in range(0,len(poly)):
+        for j in range(0,i):
+            i1 = pts[poly[i][0]]
+            i2 = pts[poly[i][1]]
+            ci1 = (float_of_fract(i1[0]),float_of_fract(i1[1]))
+            ci2 = (float_of_fract(i2[0]),float_of_fract(i2[1]))
+            j1 = pts[poly[j][0]]
+            j2 = pts[poly[j][1]]
+            cj1 = (float_of_fract(j1[0]),float_of_fract(j1[1]))
+            cj2 = (float_of_fract(j2[0]),float_of_fract(j2[1]))
+            if crossed_lines((ci1,ci2),(cj1,cj2)):
+                return False
+    return True
 
 class Folder:
     def __init__(self,p):
@@ -56,7 +143,27 @@ class Folder:
             self.connections[l[0]].add(l[1])
             self.connections[l[1]].add(l[0])
         print self.connections
+        poly_candidates = [[k] for k in self.connections.keys()]
+        poly_finished = []
+        # As long as we can add a new point to each polygon candidate
+        # Without crossing an existing line, add it.  If we reach
+        # a point already in the candidate, then emit a finished
+        # polygon and retire it.
+        while len(poly_candidates):
+            cand = poly_candidates[0]
+            poly_candidates = poly_candidates[1:]
+            for conn in self.connections[cand[0]]:
+                if cand[-1] == conn and len(cand) > 2:
+                    poly_finished.append(cand)
+                elif not conn in cand:
+                    proposed = [conn]+cand
+                    if planar_poly(self.points,proposed):
+                        poly_candidates.append(proposed)
+        print self.points
+        print poly_finished
         # A square is made up of polygons built from the shapes in the skeleton
+        
+            
 
 if __name__ == '__main__':
     import sys
