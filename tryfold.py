@@ -205,7 +205,7 @@ class Folder:
                     for c in connected:
                         newp = [c]+p
                         area = sum([poly_area(self.points, self.poly_finished[poly_]) for poly_ in newp])
-                        if area < (1 - epsilon) and not newp in newpolies:
+                        if area < (1 + epsilon) and not newp in newpolies:
                             print 'adding %s area %s' % (newp, area)
                             newpolies.append(newp)
             polies = newpolies
