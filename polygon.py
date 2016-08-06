@@ -132,9 +132,10 @@ class TransformedSegment:
         self.original_indices = edge = polygon[edge_idx]
         assert type(edge) == IndexSegment
         self.transform = transform
+        self.segment_ = Segment(self.points[self.original_indices[0]].transform(self.transform), self.points[self.original_indices[1]].transform(self.transform))
 
     def segment(self):
-        return Segment(self.points[self.original_indices[0]].transform(self.transform), self.points[self.original_indices[1]].transform(self.transform))
+        return self.segment_
 
     def __repr__(self):
         return "TransformedSegment(%s,%s,original=%s)" % (self.original_poly_idx,self.original_edge_idx,self.original_indices)
@@ -145,9 +146,10 @@ class TransformedPoly:
         self.points = points
         self.polygon = polygon
         self.pidx = pidx
+        self.segments_ = [TransformedSegment(self.transform,self.points,self.polygon,self.pidx,s) for s in range(len(self.polygon))]
 
     def segments(self):
-        return [TransformedSegment(self.transform,self.points,self.polygon,self.pidx,s) for s in range(len(self.polygon))]
+        return self.segments_
 
     def area(self):
         return poly_area(self.points, poly_segments_to_indices(self.polygon))
