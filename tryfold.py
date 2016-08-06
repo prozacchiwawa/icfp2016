@@ -121,18 +121,54 @@ def poly_area(pts, poly_):
         total += v1[0]*v2[1] - v1[1]*v2[0]
     return abs(total/2)
 
-def poly_from_boundary(polygon,e1,prototype):
+class TransformedSegment:
+    def __init__(self,transform,points,polygon,poly_idx,edge_idx):
+        self.original_edge_idx = edge_idx
+        self.original_poly_idx = poly_idx
+        self.original_indices = edge = IndexSegment(polygon[edge_idx],polygon[(edge_idx+1)%len(polygon)])
+        self.segment = Segment(points[edge[0]].transform(transform), points[edge[1]].transform(transform))
+
+class TransformedPoly:
+    def __init__(self,transform,points,polygon,pidx):
+        self.transform = transform
+        self.points = points
+        self.pidx = pidx
+        self.segments = [TransformedSegment(transform,points,polygon,pidx,s) for s in range(len(polygon))]
+
+def transform_from_boundary(points,polygon,e1):
     # Points is a list of Point
     # polygon and prototype are lists of Segment
     # e1 is an index in polygon of an edge that has a match in prototype
     
     # Find matching edge in prototype
-    segment = polygon[e1]
-    e2 = prototype.index(segment)
-    
+    segment = Segment(points[polygon[e1][0]],points[polygon[e1][1]])
     transform = matrix.reflection(segment)
     
-    return (transform, [s.transform(transform) for s in prototype])
+    return transform
+
+class FoldSpec:
+    def __init__(self,folder,placed):
+        self.folder = folder
+        self.placed = placed
+
+    def getEdgesInPlay(self):
+        for p in self.placed:
+            for s in p.segments:
+                adjacent = self.folder.getAdjacent(s.original_indices)
+                for a in adjacent:
+                    yield (s,a) # TransformedSegment, polygon index
+
+    def getPointsList(self,tseg):
+        return [p.transform(tseg.transform) for p in self.folder.points]
+
+    def withUnfold(self,tseg,poly_idx):
+        polygon = self.folder.poly_finished[poly_idx]
+        # Find tseg in polygon
+        e1 = polygon.index(tseg.orginal_indices)
+        points = self.getPointsList(tseg)
+        transform = transform_from_boundary(points,polygon,e1)
+        placed_plus = [TransformedPoly(transform,points,polygon,poly_idx)] + self.placed
+        return FoldSpec(self.folder,placed_plus)
 
 class Folder:
     def __init__(self,p):
@@ -164,7 +200,7 @@ class Folder:
                 p = self.points.index(pp)
                 if s[0] == p or s[1] == p:
                     continue
-                ss = (self.points[s[0]],self.points[s[1]])
+                ss = Segment(self.points[s[0]],self.points[s[1]])
                 a = fract_dist(ss[0],ss[1])
                 b = fract_dist(ss[1],pp)
                 c = fract_dist(pp,ss[0])
@@ -209,16 +245,20 @@ class Folder:
             else:
                 self.poly_finished.append(pi)
         print self.poly_finished
-        poly_connections = dict([(l,set([])) for l in self.lines])
-        print poly_connections
+        self.poly_connections = dict([(l,set([])) for l in self.lines])
         for pi, p in enumerate(self.poly_finished):
             for i in range(len(p)):
                 line = IndexSegment(p[i], p[(i+1)%len(p)])
-                if line in poly_connections:
-                    poly_connections[line].add(pi)
+                if line in self.poly_connections:
+                    self.poly_connections[line].add(pi)
                 else:
-                    poly_connections[IndexSegment(line[1],line[0])].add(pi)
-        print poly_connections
+                    self.poly_connections[IndexSegment(line[1],line[0])].add(pi)
+        print self.poly_connections
+
+    def getRootUnfold(self):
+        return FoldSpec(self,[TransformedPoly(matrix.identity, self.points, self.poly_finished[0], 0)])
+
+    def bruteAdjacentMethod(self):
         # A square is made up of polygons built from the shapes in the skeleton.
         # We will generate a list of polygon combinations whose area sum is
         # exactly 1 as close as we can tell.
@@ -230,9 +270,9 @@ class Folder:
                 poly = self.poly_finished[p[0]]
                 for i in range(len(poly)):
                     side = IndexSegment(poly[i],poly[(i+1)%len(poly)])
-                    if not side in poly_connections:
+                    if not side in self.poly_connections:
                         side = IndexSegment(side[1],side[0])
-                    connected = poly_connections[side]
+                    connected = self.poly_connections[side]
                     for c in connected:
                         newp = [c]+p
                         area = sum([poly_area(self.points, self.poly_finished[poly_]) for poly_ in newp])
@@ -241,10 +281,9 @@ class Folder:
                                 finished.append(newp)
                             newpolies.append(newp)
             polies = newpolies
-        self.candidate_solutions = finished
+        return finished
         # Candidate solutions is a list of lists of polygon indices in self.poly_finished
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
-        
 
 if __name__ == '__main__':
     import sys
@@ -254,7 +293,8 @@ if __name__ == '__main__':
     p = problem.read(open(sys.argv[1]))
     f = Folder(p)
     g = SVGGallery()
-    for sol in f.candidate_solutions:
+    candidates = f.bruteAdjacentMethod()
+    for sol in candidates:
         square = ceil(sqrt(len(sol)))
         segs = []
         square_tenth = square / 10.0

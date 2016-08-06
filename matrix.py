@@ -1,5 +1,7 @@
 from fractions import Fraction
 
+identity = [[1,0,0],[0,1,0],[0,0,1]]
+
 # http://stackoverflow.com/questions/10508021/matrix-multiplication-in-python
 def matrixmult (A, B):
     rows_A = len(A)

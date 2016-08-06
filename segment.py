@@ -32,3 +32,6 @@ class IndexSegment(tuple):
         assert type(a) == type(0)
         assert type(b) == type(0)
         return super(IndexSegment,self).__new__(self,tuple((a,b)))
+
+    def offset(self,n):
+        return IndexSegment(self[0]+n,self[1]+n)

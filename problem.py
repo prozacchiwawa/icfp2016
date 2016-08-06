@@ -12,7 +12,7 @@ vertex_re_str = '%s,%s' % (fraction_re_str, fraction_re_str.replace('x','y'))
 vertex_re = re.compile(vertex_re_str)
 segment_re_str = '%s %s' % (vertex_re_str.replace('x','ax').replace('y','ay'), vertex_re_str.replace('x','bx').replace('y','by'))
 segment_re = re.compile(segment_re_str)
-
+        
 class Problem(object):
     def __eq__(self, other): 
         return self.slist == other.slist and self.plist == other.plist
