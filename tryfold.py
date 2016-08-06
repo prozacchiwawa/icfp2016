@@ -198,11 +198,11 @@ class Folder:
         print poly_connections
         for pi, p in enumerate(self.poly_finished):
             for i in range(len(p)):
-                line = (p[i], p[(i+1)%len(p)])
+                line = IndexSegment(p[i], p[(i+1)%len(p)])
                 if line in poly_connections:
                     poly_connections[line].add(pi)
                 else:
-                    poly_connections[(line[1],line[0])].add(pi)
+                    poly_connections[IndexSegment(line[1],line[0])].add(pi)
         print poly_connections
         # A square is made up of polygons built from the shapes in the skeleton.
         # We will generate a list of polygon combinations whose area sum is
@@ -214,9 +214,9 @@ class Folder:
             for p in polies:
                 poly = self.poly_finished[p[0]]
                 for i in range(len(poly)):
-                    side = (poly[i],poly[(i+1)%len(poly)])
+                    side = IndexSegment(poly[i],poly[(i+1)%len(poly)])
                     if not side in poly_connections:
-                        side = (side[1],side[0])
+                        side = IndexSegment(side[1],side[0])
                     connected = poly_connections[side]
                     for c in connected:
                         newp = [c]+p
