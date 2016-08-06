@@ -54,8 +54,9 @@ def isUnitSquare(rational_points):
     return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
 class FoldSpec:
-    def __init__(self,folder,placed):
+    def __init__(self,folder,points,placed):
         self.folder = folder
+        self.points = points
         self.placed = placed
         self.points_ = {}
         self.area_ = None
@@ -85,7 +86,7 @@ class FoldSpec:
         if tseg in self.points_:
             return self.points_[tseg]
         else:
-            self.points_[tseg] = res = [p.transform(tseg.transform) for p in self.folder.points]
+            self.points_[tseg] = res = [p.transform(tseg.transform) for p in self.points]
             return res
 
     def withUnfold(self,poly_idx,tseg):
@@ -97,7 +98,7 @@ class FoldSpec:
         points = self.getPointsList(tseg)
         transform = transform_from_boundary(points,polygon,e1)
         placed_plus = [TransformedPoly(transform,points,polygon,poly_idx)] + self.placed
-        return FoldSpec(self.folder,placed_plus)
+        return FoldSpec(self.folder,points,placed_plus)
 
 class Folder:
     def __init__(self,p):
@@ -200,7 +201,7 @@ class Folder:
         result = []
         for pfin in self.poly_finished:
             polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
-            result.append(FoldSpec(self,[TransformedPoly(matrix.identity, self.points, polygon, 0)]))
+            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)]))
         return result
 
     def bruteAdjacentMethod(self):
