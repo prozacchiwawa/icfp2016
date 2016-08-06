@@ -2,7 +2,7 @@ from fractions import Fraction
 import problem
 from problem import Problem
 from fract import float_of_fract, fract_dist
-from math import sqrt, fabs, ceil, floor, atan, atan2, pi
+from math import sqrt, fabs, ceil, floor, atan, atan2, pi, fmod
 from svgvis import SVGGallery
 from point import Point, FloatPoint
 from segment import Segment, FloatSegment, IndexSegment
@@ -35,25 +35,23 @@ def isUnitSquare(rational_points):
 
     # hull_points are guaranteed to be in counterclockwise order
     angle = None
-    if line1.no_slope():
-        if line2.slope() == 0:
-            angle = 90
-    elif line2.no_slope():
-        if line1.slope() == 0:
-            angle = 90
+    if line1.no_slope() and (not line2.no_slope() and line2.slope() == 0):
+        angle = pi / 2
+    elif line2.no_slope() and (not line1.no_slope() and line1.slope() == 0):
+        angle = pi / 2
     else:
-        m1 = line1.slope()
-        m2 = line2.slope()
-        #l1 = line1.toFloat()
-        #l2 = line2.toFloat()
-        #angle = atan2(line2[1].toFloat(), line2[0].toFloat()) - atan2(line1[1].toFloat(), line1[0].toFloat())
-        angle = atan2(m2, 1) - atan2(m1, 1)
+        l1f = line1.toFloat()
+        l2f = line2.toFloat()
+        print "lines %s %s" % (l1f, l2f)
+        l1d = FloatPoint(l1f[1][0]-l1f[0][0],l1f[1][1]-l1f[0][1])
+        l2d = FloatPoint(l2f[1][0]-l2f[0][0],l2f[1][1]-l2f[0][1])
+        angle = atan2(l2d[1], l2d[0]) - atan2(l1d[1], l1d[0])
         
     area = poly_area(rational_points, hull.vertices)
     num_points = len(hull_points)
-    angle_delta = ((2*pi-angle) - (pi/2)) % (2*pi)
+    angle_delta = fmod(angle - (pi/2), 2*pi)
     print "IsSquare: area:", area, "Num Points: ", num_points, "Angle Delta from 90 degrees, in radians: ", angle_delta
-    return area == 1 and num_points == 4 and angle_delta < epsilon
+    return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
 class FoldSpec:
     def __init__(self,folder,placed):
@@ -232,7 +230,6 @@ class Folder:
 
     def unfoldsWithArea1(self):
         unfold_queue = [self.getRootUnfold()]
-        outi = 0
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
@@ -241,15 +238,17 @@ class Folder:
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
                 area = unfolded.area()
-                if polygon == 1 and segment.original_indices[0] == 4 and segment.original_indices[1] == 5:
-                    g = SVGGallery()
-                    g.addFigure('#939', [s.segment().toFloat() for s in u.getSegments()])
-                    g.addFigure('#000', [s.segment().toFloat() for s in unfolded.getSegments()])
-                    with open('outf%s-%s.svg' % (outi, area),'w') as f:
-                        f.write(g.draw())
-                    outi += 1
-                if abs(area - 1) < epsilon:
-                    yield unfolded
+                if abs(area - 1.0) < epsilon:
+                    points = []
+                    segs = [s.segment() for s in unfolded.getSegments()]
+                    for s in segs:
+                        points.append(s[0])
+                        points.append(s[1])
+                    usq = isUnitSquare(points)
+                    if usq:
+                        print 'unit square %s' % points
+                        yield unfolded
+                        return
                 elif area < 1:
                     unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
@@ -266,7 +265,7 @@ if __name__ == '__main__':
     for sol in candidates:
         segs = [s.segment() for s in sol.getSegments()]
         g.addFigure('#459', segs)
-    
+
     if len(sys.argv) > 2:
         with open(sys.argv[2],'w') as outf:
             outf.write(g.draw())
