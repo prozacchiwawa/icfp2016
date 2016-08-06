@@ -59,9 +59,15 @@ class FoldSpec:
     def __init__(self,folder,placed):
         self.folder = folder
         self.placed = placed
+        self.points_ = {}
+        self.area_ = None
 
     def area(self):
-        return sum([p.area() for p in self.placed])
+        if self.area_:
+            return self.area_
+        else:
+            self.area_ = sum([p.area() for p in self.placed])
+            return self.area_
 
     def getEdgesInPlay(self):
         for p in self.placed:
@@ -77,7 +83,11 @@ class FoldSpec:
         return segs
 
     def getPointsList(self,tseg):
-        return [p.transform(tseg.transform) for p in self.folder.points]
+        if tseg in self.points_:
+            return self.points_[tseg]
+        else:
+            self.points_[tseg] = res = [p.transform(tseg.transform) for p in self.folder.points]
+            return res
 
     def withUnfold(self,poly_idx,tseg):
         pfin = self.folder.poly_finished[poly_idx]
@@ -218,6 +228,20 @@ class Folder:
         # Candidate solutions is a list of lists of polygon indices in self.poly_finished
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
 
+    def unfoldsWithArea1(self):
+        unfold_queue = [self.getRootUnfold()]
+        while len(unfold_queue):
+            print len(unfold_queue)
+            u = unfold_queue[0]
+            if u.area() == 1:
+                print 'unfold area 1 %s' % u
+                yield u
+            unfolds = u.getEdgesInPlay()
+            unfold_queue = unfold_queue[1:]
+            for (polygon,segment) in unfolds:
+                unfold_queue.extend(filter(lambda f: f.area() <= 1, [u.withUnfold(polygon,segment)]))
+            unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) == 1:
@@ -226,27 +250,9 @@ if __name__ == '__main__':
     p = problem.read(open(sys.argv[1]))
     f = Folder(p)
     g = SVGGallery()
-    candidates = f.bruteAdjacentMethod()
+    candidates = f.unfoldsWithArea1()
     for sol in candidates:
-        square = ceil(sqrt(len(sol)))
-        segs = []
-        square_tenth = square / 10.0
-        SL = -square_tenth
-        SH = square + square_tenth
-        segs.append(FloatSegment(FloatPoint(SL,SL),FloatPoint(SH,SL)))
-        segs.append(FloatSegment(FloatPoint(SL,SL),FloatPoint(SL,SH)))
-        segs.append(FloatSegment(FloatPoint(SH,SH),FloatPoint(SH,SL)))
-        segs.append(FloatSegment(FloatPoint(SH,SH),FloatPoint(SL,SH)))
-        for i,ss in enumerate(sol):
-            s = f.poly_finished[ss]
-            y = floor(i / square) * 1.1
-            x = (i % square) * 1.1
-            for i,v in enumerate(s):
-                p1 = f.points[v]
-                p2 = f.points[s[(i+1)%len(s)]]
-                p1 = FloatPoint(p1[0] + x, p1[1] + y)
-                p2 = FloatPoint(p2[0] + x, p2[1] + y)
-                segs.append(FloatSegment(p1, p2))
+        segs = [s.segment() for s in sol.getSegments()]
         g.addFigure('#459', segs)
     
     if len(sys.argv) > 2:
