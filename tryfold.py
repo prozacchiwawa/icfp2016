@@ -4,6 +4,8 @@ from problem import Problem
 from fract import float_of_fract, fract_dist
 from math import sqrt, fabs, ceil, floor
 from svgvis import SVGGallery
+from point import Point, FloatPoint
+from segment import Segment, FloatSegment, IndexSegment
 
 epsilon = 0.0000001
 
@@ -96,13 +98,13 @@ def planar_poly(pts,polyline):
         for j in range(0,i):
             i1 = pts[poly[i][0]]
             i2 = pts[poly[i][1]]
-            ci1 = (float_of_fract(i1[0]),float_of_fract(i1[1]))
-            ci2 = (float_of_fract(i2[0]),float_of_fract(i2[1]))
+            ci1 = i1.toFloat()
+            ci2 = i2.toFloat()
             j1 = pts[poly[j][0]]
             j2 = pts[poly[j][1]]
-            cj1 = (float_of_fract(j1[0]),float_of_fract(j1[1]))
-            cj2 = (float_of_fract(j2[0]),float_of_fract(j2[1]))
-            if crossed_lines((ci1,ci2),(cj1,cj2)):
+            cj1 = j1.toFloat()
+            cj2 = j2.toFloat()
+            if crossed_lines(FloatSegment(ci1,ci2),FloatSegment(cj1,cj2)):
                 return False
     return True
 
@@ -124,6 +126,8 @@ class Folder:
         self.points = []
         pointset = set([])
         for s in self.p.slist:
+            print s
+            assert type(s) == Segment
             if not s[0] in pointset:
                 self.points.append(s[0])
             if not s[1] in pointset:
@@ -134,9 +138,10 @@ class Folder:
         # Make a list of lines by vertex
         self.lines = []
         for line in self.p.slist:
+            print (line[0],line[1])
             a = self.points.index(line[0])
             b = self.points.index(line[1])
-            self.lines.append((a,b))
+            self.lines.append(IndexSegment(a,b))
         # Break lines that contain points in the slist set
         lineset = set(self.lines)
         for s in [sa for sa in lineset]:
@@ -153,8 +158,8 @@ class Folder:
                 if ta < epsilon:
                     if s in lineset:
                         lineset.remove(s)
-                    lineset.add((s[0],p))
-                    lineset.add((p,s[1]))
+                    lineset.add(Segment(s[0],p))
+                    lineset.add(Segment(p,s[1]))
         self.lines = [l for l in lineset]
         print 'lines %s' % (self.lines)
         # Make a list of polygons as lists of vertices
@@ -237,10 +242,10 @@ if __name__ == '__main__':
         square_tenth = square / 10.0
         SL = -square_tenth
         SH = square + square_tenth
-        segs.append(((SL,SL),(SH,SL)))
-        segs.append(((SL,SL),(SL,SH)))
-        segs.append(((SH,SH),(SH,SL)))
-        segs.append(((SH,SH),(SL,SH)))
+        segs.append(FloatSegment(FloatPoint(SL,SL),FloatPoint(SH,SL)))
+        segs.append(FloatSegment(FloatPoint(SL,SL),FloatPoint(SL,SH)))
+        segs.append(FloatSegment(FloatPoint(SH,SH),FloatPoint(SH,SL)))
+        segs.append(FloatSegment(FloatPoint(SH,SH),FloatPoint(SL,SH)))
         for i,ss in enumerate(sol):
             s = f.poly_finished[ss]
             y = floor(i / square) * 1.1
@@ -248,9 +253,9 @@ if __name__ == '__main__':
             for i,v in enumerate(s):
                 p1 = f.points[v]
                 p2 = f.points[s[(i+1)%len(s)]]
-                p1 = (p1[0] + x, p1[1] + y)
-                p2 = (p2[0] + x, p2[1] + y)
-                segs.append((p1, p2))
+                p1 = FloatPoint(p1[0] + x, p1[1] + y)
+                p2 = FloatPoint(p2[0] + x, p2[1] + y)
+                segs.append(FloatSegment(p1, p2))
         g.addFigure('#459', segs)
     
     if len(sys.argv) > 2:

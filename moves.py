@@ -2,6 +2,7 @@ import problem
 from problem import Problem
 import fractions
 from fractions import Fraction
+from point import Point
 
 import misc
 from misc import intn
@@ -52,7 +53,7 @@ def translate(problem, arglist):
     for polygon in problem.plist:
         vlist = []
         for vertex in polygon:
-            vlist.append((vertex[0] + x, vertex[1] + y))
+            vlist.append(Segment(vertex[0] + x, vertex[1] + y))
         new_polys.append(vlist)
             
     for line in problem.slist:
@@ -60,7 +61,7 @@ def translate(problem, arglist):
         a = line[0]
         b = line[1]
         print (a,b)
-        new_lines.append( ((a[0]+x,a[1]+y), (b[0]+x,b[1]+y)) )
+        new_lines.append( Segment(a[0]+x,a[1]+y, b[0]+x,b[1]+y) )
 
     # Note that Problem construtor wants tuples, not Fractions
     return Problem(new_polys, new_lines)
