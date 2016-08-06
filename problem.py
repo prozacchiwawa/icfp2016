@@ -1,6 +1,8 @@
 import re
 from fractions import Fraction
 from fract import float_of_fract
+import misc
+from misc import intn
 
 fraction_re_str = '(?P<xn>[-0-9]+)[ \t]*(/[ \t]*(?P<xd>[-0-9]+))?'
 vertex_re_str = '%s,%s' % (fraction_re_str, fraction_re_str.replace('x','y'))
@@ -8,7 +10,13 @@ vertex_re = re.compile(vertex_re_str)
 segment_re_str = '%s %s' % (vertex_re_str.replace('x','ax').replace('y','ay'), vertex_re_str.replace('x','bx').replace('y','by'))
 segment_re = re.compile(segment_re_str)
 
-class Problem:
+class Problem(object):
+    def __eq__(self, other): 
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
     def __init__(self,plist,slist):
         self.plist = plist
         self.slist = slist
@@ -18,6 +26,9 @@ class Problem:
         ymax = 1
         for vlist in plist:
             for p in vlist:
+                print p
+                assert( type(p) == tuple )
+                assert( type(p[0]) == Fraction )
                 xmin = min(float_of_fract(p[0]), xmin)
                 xmax = max(float_of_fract(p[0]), xmax)
                 ymin = min(float_of_fract(p[1]), ymin)
@@ -61,12 +72,6 @@ class Problem:
 
     def __repr__(self):
         return "Problem(%s,%s)" % (self.plist,self.slist)
-
-def intn(s):
-    if s is None:
-        return 1
-    else:
-        return int(s)
 
 def read(flo):
     lines = filter(lambda x: len(x), [l.strip() for l in flo.readlines()])
