@@ -6,6 +6,7 @@ from point import Point
 from fractions import Fraction
 import matrix
 import problem
+from svgvis import SVGGallery
 
 class TestIntersect(unittest.TestCase):
     def test_bowtie(self):
@@ -31,6 +32,14 @@ class TestIntersect(unittest.TestCase):
         p = problem.read(open('./prob/prob12.prob'))
         f = Folder(p)
         rootfold = f.getRootUnfold()
-            
+        unfolds = [rootfold.withUnfold(x[0],x[1]) for x in rootfold.getEdgesInPlay()]
+        best = filter(lambda x: x.area() == 1, unfolds)[0]
+        segs = best.getSegments()
+        g = SVGGallery()
+        g.addFigure('#621',[s.segment() for s in segs])
+        f = open('test.svg','w')
+        f.write(g.draw())
+        f.close()
+
 if __name__ == '__main__':
     unittest.main()

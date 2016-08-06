@@ -35,3 +35,6 @@ class IndexSegment(tuple):
 
     def offset(self,n):
         return IndexSegment(self[0]+n,self[1]+n)
+
+    def swap(self):
+        return IndexSegment(self[1],self[0])
