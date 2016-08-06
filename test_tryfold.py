@@ -31,7 +31,7 @@ class TestIntersect(unittest.TestCase):
     def test_unfold(self):
         p = problem.read(open('./prob/prob12.prob'))
         f = Folder(p)
-        rootfold = f.getRootUnfold()
+        rootfold = f.getRootUnfolds()[0]
         unfolds = [rootfold.withUnfold(x[0],x[1]) for x in rootfold.getEdgesInPlay()]
         best = filter(lambda x: x.area() == 1, unfolds)[0]
         segs = best.getSegments()
@@ -44,7 +44,7 @@ class TestIntersect(unittest.TestCase):
     def test_unfold11(self):
         p = problem.read(open('./prob/prob11.prob'))
         f = Folder(p)
-        rootfold = f.getRootUnfold()
+        rootfold = f.getRootUnfolds()[0]
         vlist = filter(lambda x: x[1].original_indices == IndexSegment(4,5), [x for x in rootfold.getEdgesInPlay()])
         g = SVGGallery()
         for v in vlist:

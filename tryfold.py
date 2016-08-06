@@ -10,6 +10,7 @@ import matrix
 from matrix import matrixmult
 from basic import epsilon
 from polygon import *
+import solution
 import scipy.spatial
 from scipy.spatial import ConvexHull
 
@@ -66,8 +67,9 @@ def isUnitSquare(rational_points):
     return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
 class FoldSpec:
-    def __init__(self,folder,placed):
+    def __init__(self,folder,points,placed):
         self.folder = folder
+        self.points = points
         self.placed = placed
         self.points_ = {}
         self.area_ = None
@@ -105,7 +107,7 @@ class FoldSpec:
         if tseg in self.points_:
             return self.points_[tseg]
         else:
-            self.points_[tseg] = res = [p.transform(tseg.transform) for p in self.folder.points]
+            self.points_[tseg] = res = [p.transform(tseg.transform) for p in self.points]
             return res
 
     def withUnfold(self,poly_idx,tseg):
@@ -117,7 +119,7 @@ class FoldSpec:
         points = self.getPointsList(tseg)
         transform = transform_from_boundary(points,polygon,e1)
         placed_plus = [TransformedPoly(transform,points,polygon,poly_idx)] + self.placed
-        return FoldSpec(self.folder,placed_plus)
+        return FoldSpec(self.folder,points,placed_plus)
 
 class Folder:
     def __init__(self,p):
@@ -216,10 +218,12 @@ class Folder:
         else:
             return self.poly_connections[IndexSegment(iseg[1],iseg[0])]
 
-    def getRootUnfold(self):
-        pfin = self.poly_finished[0]
-        polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
-        return FoldSpec(self,[TransformedPoly(matrix.identity, self.points, polygon, 0)])
+    def getRootUnfolds(self):
+        result = []
+        for pfin in self.poly_finished:
+            polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
+            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)]))
+        return result
 
     def bruteAdjacentMethod(self):
         # A square is made up of polygons built from the shapes in the skeleton.
@@ -249,7 +253,7 @@ class Folder:
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
 
     def unfoldsWithArea1(self):
-        unfold_queue = [self.getRootUnfold()]
+        unfold_queue = self.getRootUnfolds()
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
@@ -270,7 +274,6 @@ class Folder:
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
                 if unfolded.area() < 1 and not unfolded.hasOverlap():
-                    print "adding ", unfolded
                     unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
@@ -285,6 +288,8 @@ if __name__ == '__main__':
     candidates = f.unfoldsWithArea1()
     for sol in candidates:
         segs = [s.segment() for s in sol.getSegments()]
+        segs = solution.makeUnitSquare(segs)
+        print 'r %s' % segs
         g.addFigure('#459', segs)
 
     if len(sys.argv) > 2:
