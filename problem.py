@@ -13,7 +13,7 @@ segment_re = re.compile(segment_re_str)
 
 class Problem(object):
     def __eq__(self, other): 
-        return self.__dict__ == other.__dict__
+        return self.slist == other.slist and self.plist == other.plist
 
     def __ne__(self, other):
         return not self.__eq__(other)
