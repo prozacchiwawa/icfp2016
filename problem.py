@@ -4,6 +4,7 @@ from fract import float_of_fract
 import misc
 from misc import intn
 from svgvis import SVGGallery
+from point import Point
 
 fraction_re_str = '(?P<xn>[-0-9]+)[ \t]*(/[ \t]*(?P<xd>[-0-9]+))?'
 vertex_re_str = '%s,%s' % (fraction_re_str, fraction_re_str.replace('x','y'))
@@ -27,8 +28,7 @@ class Problem(object):
         ymax = 1
         for vlist in plist:
             for p in vlist:
-                print p
-                assert( type(p) == tuple )
+                assert( type(p) == Point )
                 assert( type(p[0]) == Fraction )
                 xmin = min(float_of_fract(p[0]), xmin)
                 xmax = max(float_of_fract(p[0]), xmax)
@@ -81,7 +81,7 @@ def read(flo):
                 print 'problem parsing %s' % (lines[l])
             cx = Fraction(int(m.group('xn')),intn(m.group('xd')))
             cy = Fraction(int(m.group('yn')),intn(m.group('yd')))
-            vlist.append((cx,cy))
+            vlist.append(Point(cx,cy))
         plist.append(vlist)
     skelsegs = int(lines[l])
     slist = []
@@ -93,8 +93,8 @@ def read(flo):
         ay = Fraction(int(m.group('ayn')),intn(m.group('ayd')))
         bx = Fraction(int(m.group('bxn')),intn(m.group('bxd')))
         by = Fraction(int(m.group('byn')),intn(m.group('byd')))
-        a = (ax,ay)
-        b = (bx,by)
+        a = Point(ax,ay)
+        b = Point(bx,by)
         slist.append((a,b))
     return Problem(plist, slist)
 
