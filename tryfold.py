@@ -89,7 +89,6 @@ def planar_poly(pts,polyline):
             point_used[coord[0]] += 1
             point_used[coord[1]] += 1
         poly.append(coord)
-    print 'PU %s' % point_used
     for k in point_used.keys():
         if not point_used[k] in [2,0]:
             return False
@@ -151,8 +150,9 @@ class Folder:
                 c = fract_dist(pp,ss[0])
                 ta = triangle_area(a,b,c)
                 print 'area of %s,%s,%s -> %s' % (a,b,c,ta)
-                if ta < epsilon and b < a:
-                    lineset.remove(s)
+                if ta < epsilon:
+                    if s in lineset:
+                        lineset.remove(s)
                     lineset.add((s[0],p))
                     lineset.add((p,s[1]))
         self.lines = [l for l in lineset]
