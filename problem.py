@@ -3,6 +3,7 @@ from fractions import Fraction
 from fract import float_of_fract
 import misc
 from misc import intn
+from svgvis import SVGGallery
 
 fraction_re_str = '(?P<xn>[-0-9]+)[ \t]*(/[ \t]*(?P<xd>[-0-9]+))?'
 vertex_re_str = '%s,%s' % (fraction_re_str, fraction_re_str.replace('x','y'))
@@ -49,26 +50,17 @@ class Problem(object):
         self.sscale = 500 / max(xmax - xmin, ymax - ymin)
         self.sx = 640 - (self.sscale * xmin)
         self.sy = 70 - (self.sscale * ymin)
+        self.svg = SVGGallery()
+        polygonSegs = []
+        for poly in self.plist:
+            for i,p in enumerate(poly):
+                polygonSegs.append((p,poly[(i+1)%len(poly)]))
+                
+        self.polygonGlyph = self.svg.addFigure('#974', polygonSegs)
+        self.skeletonGlyph = self.svg.addFigure('#a31', self.slist)
 
-    def svgLine(self,l):
-        a = l[0]
-        b = l[1]
-        return '<line stroke="#834" stroke-width="2" x1="%s" y1="%s" x2="%s" y2="%s"/>' % (float_of_fract(a[0], self.sx, self.sscale), float_of_fract(a[1], self.sy, self.sscale), float_of_fract(b[0], self.sx, self.sscale), float_of_fract(b[1], self.sy, self.sscale))
-
-    def svgPolygon(self,vlist):
-        points = ['%s,%s' % (float_of_fract(p[0],self.xoff,self.scale),float_of_fract(p[1],self.yoff,self.scale)) for p in vlist]
-        return '<polygon fill="none" stroke="#ff8a65" stroke-width="2" points="%s"/>' % (' '.join(points))
     def toSVG(self):
-        polygons = '\n'.join([self.svgPolygon(p) for p in self.plist])
-        skeleton = '\n'.join([self.svgLine(l) for l in self.slist])
-        res = [
-            '<?xml version="1.0" encoding="iso-8859-1"?>'
-            '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="640" width="1210" viewBox="0 0 640 1210">',
-            polygons,
-            skeleton,
-            '</svg>'
-        ]
-        return '\n'.join(res)
+        return self.svg.draw()
 
     def __repr__(self):
         return "Problem(%s,%s)" % (self.plist,self.slist)

@@ -2,7 +2,8 @@ from fractions import Fraction
 import problem
 from problem import Problem
 from fract import float_of_fract, fract_dist
-from math import sqrt, fabs
+from math import sqrt, fabs, ceil, floor
+from svgvis import SVGGallery
 
 epsilon = 0.0000001
 
@@ -81,8 +82,16 @@ def crossed_lines(a,b):
 
 def planar_poly(pts,polyline):
     poly = []
-    for i in range(0,len(polyline)-1):
-        poly.append((polyline[i],polyline[i+1]))
+    point_used = dict([(p,0) for p in range(len(pts))])
+    for i in range(0,len(polyline)):
+        coord = (polyline[i],polyline[(i+1)%len(polyline)])
+        if coord[0] != coord[1]:
+            point_used[coord[0]] += 1
+            point_used[coord[1]] += 1
+        poly.append(coord)
+    for k in point_used.keys():
+        if not point_used[k] in [2,0]:
+            return False
     for i in range(0,len(poly)):
         for j in range(0,i):
             i1 = pts[poly[i][0]]
@@ -141,8 +150,9 @@ class Folder:
                 c = fract_dist(pp,ss[0])
                 ta = triangle_area(a,b,c)
                 print 'area of %s,%s,%s -> %s' % (a,b,c,ta)
-                if ta < epsilon and b < a:
-                    lineset.remove(s)
+                if ta < epsilon:
+                    if s in lineset:
+                        lineset.remove(s)
                     lineset.add((s[0],p))
                     lineset.add((p,s[1]))
         self.lines = [l for l in lineset]
@@ -193,6 +203,7 @@ class Folder:
         # We will generate a list of polygon combinations whose area sum is
         # exactly 1 as close as we can tell.
         polies = [[n] for n in range(len(self.poly_finished))]
+        finished = []
         while any([sum([poly_area(self.points, self.poly_finished[p]) for p in poly]) < (1 - epsilon) for poly in polies]):
             newpolies = []
             for p in polies:
@@ -206,16 +217,42 @@ class Folder:
                         newp = [c]+p
                         area = sum([poly_area(self.points, self.poly_finished[poly_]) for poly_ in newp])
                         if area < (1 + epsilon) and not newp in newpolies:
-                            print 'adding %s area %s' % (newp, area)
+                            if area > (1 - epsilon):
+                                finished.append(newp)
                             newpolies.append(newp)
             polies = newpolies
-            print polies
+        self.candidate_solutions = finished
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) == 1:
-        print 'usage: tryfold.py [prob]'
+        print 'usage: tryfold.py [prob] [svg?]'
         sys.exit(1)
     p = problem.read(open(sys.argv[1]))
     f = Folder(p)
-
+    g = SVGGallery()
+    for sol in f.candidate_solutions:
+        square = ceil(sqrt(len(sol)))
+        segs = []
+        square_tenth = square / 10.0
+        SL = -square_tenth
+        SH = square + square_tenth
+        segs.append(((SL,SL),(SH,SL)))
+        segs.append(((SL,SL),(SL,SH)))
+        segs.append(((SH,SH),(SH,SL)))
+        segs.append(((SH,SH),(SL,SH)))
+        for i,ss in enumerate(sol):
+            s = f.poly_finished[ss]
+            y = floor(i / square) * 1.1
+            x = (i % square) * 1.1
+            for i,v in enumerate(s):
+                p1 = f.points[v]
+                p2 = f.points[s[(i+1)%len(s)]]
+                p1 = (p1[0] + x, p1[1] + y)
+                p2 = (p2[0] + x, p2[1] + y)
+                segs.append((p1, p2))
+        g.addFigure('#459', segs)
+    
+    if len(sys.argv) > 2:
+        with open(sys.argv[2],'w') as outf:
+            outf.write(g.draw())
