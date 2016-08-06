@@ -196,10 +196,12 @@ class Folder:
         else:
             return self.poly_connections[IndexSegment(iseg[1],iseg[0])]
 
-    def getRootUnfold(self):
-        pfin = self.poly_finished[0]
-        polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
-        return FoldSpec(self,[TransformedPoly(matrix.identity, self.points, polygon, 0)])
+    def getRootUnfolds(self):
+        result = []
+        for pfin in self.poly_finished:
+            polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
+            result.append(FoldSpec(self,[TransformedPoly(matrix.identity, self.points, polygon, 0)]))
+        return result
 
     def bruteAdjacentMethod(self):
         # A square is made up of polygons built from the shapes in the skeleton.
@@ -229,7 +231,7 @@ class Folder:
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
 
     def unfoldsWithArea1(self):
-        unfold_queue = [self.getRootUnfold()]
+        unfold_queue = self.getRootUnfolds()
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
