@@ -6,6 +6,7 @@ from math import sqrt, fabs, ceil, floor
 from svgvis import SVGGallery
 from point import Point, FloatPoint
 from segment import Segment, FloatSegment, IndexSegment
+from matrix import matrixmult
 
 epsilon = 0.0000001
 
@@ -119,6 +120,17 @@ def poly_area(pts, poly_):
         total += v1[0]*v2[1] - v1[1]*v2[0]
     return abs(total/2)
 
+def poly_from_boundary(polygon,e1,prototype):
+    # Points is a list of Point
+    # polygon and prototype are lists of Segment
+    # e1 is an index in polygon of an edge that has a match in prototype
+    
+    # Find matching edge in prototype
+    l = polygon[e1]
+    e2 = prototype.index(l)
+    
+    
+
 class Folder:
     def __init__(self,p):
         self.p = p
@@ -227,6 +239,9 @@ class Folder:
                             newpolies.append(newp)
             polies = newpolies
         self.candidate_solutions = finished
+        # Candidate solutions is a list of lists of polygon indices in self.poly_finished
+        # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
+        
 
 if __name__ == '__main__':
     import sys
