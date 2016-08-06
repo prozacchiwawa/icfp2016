@@ -2,7 +2,7 @@ from fractions import Fraction
 import problem
 from problem import Problem
 from fract import float_of_fract, fract_dist
-from math import sqrt, fabs, ceil, floor
+from math import sqrt, fabs, ceil, floor, atan, atan2, pi
 from svgvis import SVGGallery
 from point import Point, FloatPoint
 from segment import Segment, FloatSegment, IndexSegment
@@ -10,6 +10,8 @@ import matrix
 from matrix import matrixmult
 from basic import epsilon
 from polygon import *
+import scipy.spatial
+from scipy.spatial import ConvexHull
 
 def transform_from_boundary(points,polygon,e1):
     # Points is a list of Point
@@ -21,6 +23,37 @@ def transform_from_boundary(points,polygon,e1):
     transform = matrix.reflection(segment)
     
     return transform
+
+# passing in both so we can recover the rational points via index
+def isUnitSquare(rational_points):
+    # xxx rpoints and points must correspond xxx    
+    points = [ p.toFloat() for p in rational_points ]
+    hull = ConvexHull(points)
+    hull_points = [ rational_points[i] for i in hull.vertices ]
+    line1 = Segment(Point(hull_points[0][0],hull_points[0][1]), Point(hull_points[1][0], hull_points[1][1]))
+    line2 = Segment(Point(hull_points[1][0],hull_points[1][1]), Point(hull_points[2][0], hull_points[2][1]))
+
+    # hull_points are guaranteed to be in counterclockwise order
+    angle = None
+    if line1.no_slope():
+        if line2.slope() == 0:
+            angle = 90
+    elif line2.no_slope():
+        if line1.slope() == 0:
+            angle = 90
+    else:
+        m1 = line1.slope()
+        m2 = line2.slope()
+        #l1 = line1.toFloat()
+        #l2 = line2.toFloat()
+        #angle = atan2(line2[1].toFloat(), line2[0].toFloat()) - atan2(line1[1].toFloat(), line1[0].toFloat())
+        angle = atan2(m2, 1) - atan2(m1, 1)
+        
+    area = poly_area(rational_points, hull.vertices)
+    num_points = len(hull_points)
+    angle_delta = ((2*pi-angle) - (pi/2)) % (2*pi)
+    print "IsSquare: area:", area, "Num Points: ", num_points, "Angle Delta from 90 degrees, in radians: ", angle_delta
+    return area == 1 and num_points == 4 and angle_delta < epsilon
 
 class FoldSpec:
     def __init__(self,folder,placed):
@@ -63,6 +96,7 @@ class Folder:
         # Come up with a set of plausible points
         self.points = []
         pointset = set([])
+        floatPointSet = set([])
         for s in self.p.slist:
             print s
             assert type(s) == Segment
@@ -72,7 +106,11 @@ class Folder:
                 self.points.append(s[1])
             pointset.add(s[0])
             pointset.add(s[1])
+            floatPointSet.add( (float_of_fract(s[0][0]), float_of_fract(s[0][1])) )
+            floatPointSet.add( (float_of_fract(s[1][0]), float_of_fract(s[1][1])) )
         print 'pointset %s' % pointset
+        print 'Is square: ', isUnitSquare(list(pointset))
+
         # Make a list of lines by vertex
         self.lines = []
         for line in self.p.slist:
