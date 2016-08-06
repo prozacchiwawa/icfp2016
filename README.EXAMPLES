@@ -1,0 +1,5 @@
+
+Apply moves to solve problem 3:
+python do_moves.py prob/start_square.prob moves/prob3.moves prob/prob3.prob
+
+
