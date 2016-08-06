@@ -28,13 +28,12 @@ class FoldSpec:
         self.placed = placed
         self.points_ = {}
         self.area_ = None
+        self.segments_ = None
 
     def area(self):
-        if self.area_:
-            return self.area_
-        else:
+        if not self.area_:
             self.area_ = sum([p.area() for p in self.placed])
-            return self.area_
+        return self.area_
 
     def getEdgesInPlay(self):
         for p in self.placed:
@@ -44,10 +43,12 @@ class FoldSpec:
                     yield (a,s) # Polygon index, transformed segment
 
     def getSegments(self):
-        segs = []
+        if self.segments_:
+            return self.segments_
+        self.segments_ = []
         for f in self.placed:
-            segs.extend(f.segments())
-        return segs
+            self.segments_.extend(f.segments())
+        return self.segments_
 
     def getPointsList(self,tseg):
         if tseg in self.points_:
@@ -104,10 +105,11 @@ class Folder:
                 ta = triangle_area(a,b,c)
                 print 'area of %s,%s,%s -> %s' % (a,b,c,ta)
                 if ta < epsilon:
+                    print s, ss
                     if s in lineset:
                         lineset.remove(s)
-                    lineset.add(Segment(s[0],p))
-                    lineset.add(Segment(p,s[1]))
+                    lineset.add(IndexSegment(s[0],p))
+                    lineset.add(IndexSegment(p,s[1]))
         self.lines = [l for l in lineset]
         print 'lines %s' % (self.lines)
         # Make a list of polygons as lists of vertices
@@ -192,16 +194,26 @@ class Folder:
 
     def unfoldsWithArea1(self):
         unfold_queue = [self.getRootUnfold()]
+        outi = 0
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
-            if u.area() == 1:
-                print 'unfold area 1 %s' % u
-                yield u
             unfolds = u.getEdgesInPlay()
             unfold_queue = unfold_queue[1:]
             for (polygon,segment) in unfolds:
-                unfold_queue.extend(filter(lambda f: f.area() <= 1, [u.withUnfold(polygon,segment)]))
+                unfolded = u.withUnfold(polygon,segment)
+                area = unfolded.area()
+                if polygon == 1 and segment.original_indices[0] == 4 and segment.original_indices[1] == 5:
+                    g = SVGGallery()
+                    g.addFigure('#939', [s.segment().toFloat() for s in u.getSegments()])
+                    g.addFigure('#000', [s.segment().toFloat() for s in unfolded.getSegments()])
+                    with open('outf%s-%s.svg' % (outi, area),'w') as f:
+                        f.write(g.draw())
+                    outi += 1
+                if abs(area - 1) < epsilon:
+                    yield unfolded
+                elif area < 1:
+                    unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
 if __name__ == '__main__':

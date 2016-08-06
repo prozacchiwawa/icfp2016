@@ -41,5 +41,20 @@ class TestIntersect(unittest.TestCase):
         f.write(g.draw())
         f.close()
 
+    def test_unfold11(self):
+        p = problem.read(open('./prob/prob11.prob'))
+        f = Folder(p)
+        rootfold = f.getRootUnfold()
+        vlist = filter(lambda x: x[1].original_indices == IndexSegment(4,5), [x for x in rootfold.getEdgesInPlay()])
+        g = SVGGallery()
+        for v in vlist:
+            unfold = rootfold.withUnfold(v[0],v[1])
+            print 'area %s %s' % (unfold.area(), v)
+            print [x.segment() for x in unfold.getSegments()]
+            g.addFigure('#c54',[s.segment() for s in unfold.getSegments()])
+        f = open('test2.svg','w')
+        f.write(g.draw())
+        f.close()
+
 if __name__ == '__main__':
     unittest.main()

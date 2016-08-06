@@ -24,6 +24,9 @@ class Segment(tuple):
         diffx = self[1][0] - self[0][0]
         return diffy / diffx
 
+    def toFloat(self):
+        return FloatSegment(self[0].toFloat(),self[1].toFloat())
+
     def transform(self,mat):
         return Segment(self[0].transform(mat), self[1].transform(mat))
 
