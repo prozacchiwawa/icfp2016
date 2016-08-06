@@ -82,8 +82,17 @@ def crossed_lines(a,b):
 
 def planar_poly(pts,polyline):
     poly = []
-    for i in range(0,len(polyline)-1):
-        poly.append((polyline[i],polyline[i+1]))
+    point_used = dict([(p,0) for p in range(len(pts))])
+    for i in range(0,len(polyline)):
+        coord = (polyline[i],polyline[(i+1)%len(polyline)])
+        if coord[0] != coord[1]:
+            point_used[coord[0]] += 1
+            point_used[coord[1]] += 1
+        poly.append(coord)
+    print 'PU %s' % point_used
+    for k in point_used.keys():
+        if not point_used[k] in [2,0]:
+            return False
     for i in range(0,len(poly)):
         for j in range(0,i):
             i1 = pts[poly[i][0]]
@@ -208,7 +217,6 @@ class Folder:
                         newp = [c]+p
                         area = sum([poly_area(self.points, self.poly_finished[poly_]) for poly_ in newp])
                         if area < (1 + epsilon) and not newp in newpolies:
-                            print 'adding %s area %s' % (newp, area)
                             if area > (1 - epsilon):
                                 finished.append(newp)
                             newpolies.append(newp)
@@ -224,7 +232,6 @@ if __name__ == '__main__':
     f = Folder(p)
     g = SVGGallery()
     for sol in f.candidate_solutions:
-        print sol
         square = ceil(sqrt(len(sol)))
         segs = []
         square_tenth = square / 10.0
