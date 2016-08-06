@@ -10,6 +10,7 @@ import matrix
 from matrix import matrixmult
 from basic import epsilon
 from polygon import *
+import solution
 import scipy.spatial
 from scipy.spatial import ConvexHull
 
@@ -236,23 +237,25 @@ class Folder:
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
+            area = u.area()
+            print 'area %s' % area
+            if abs(area - 1.0) < epsilon:
+                points = []
+                segs = [s.segment() for s in u.getSegments()]
+                for s in segs:
+                    points.append(s[0])
+                    points.append(s[1])
+                usq = isUnitSquare(points)
+                print 'usq %s' % usq
+                if usq:
+                    print 'unit square %s' % points
+                    yield u
+                    return
             unfolds = u.getEdgesInPlay()
             unfold_queue = unfold_queue[1:]
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
-                area = unfolded.area()
-                if abs(area - 1.0) < epsilon:
-                    points = []
-                    segs = [s.segment() for s in unfolded.getSegments()]
-                    for s in segs:
-                        points.append(s[0])
-                        points.append(s[1])
-                    usq = isUnitSquare(points)
-                    if usq:
-                        print 'unit square %s' % points
-                        yield unfolded
-                        return
-                elif area < 1:
+                if unfolded.area() < 1:
                     unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
@@ -267,6 +270,8 @@ if __name__ == '__main__':
     candidates = f.unfoldsWithArea1()
     for sol in candidates:
         segs = [s.segment() for s in sol.getSegments()]
+        segs = solution.makeUnitSquare(segs)
+        print 'r %s' % segs
         g.addFigure('#459', segs)
 
     if len(sys.argv) > 2:
