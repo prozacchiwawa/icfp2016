@@ -103,8 +103,12 @@ def planar_poly(pts,polyline):
     return True
 
 # http://code.activestate.com/recipes/578275-2d-polygon-area/
-def poly_area(pts, poly_):
+def poly_area_indexed(pts, poly_):
     poly = [pts[p] for p in poly_]
+    return poly_area(poly)
+
+def poly_area(pts):
+    poly = pts
     total = 0.0
     N = len(poly)
     for i in range(N):
@@ -152,4 +156,12 @@ class TransformedPoly:
         return self.segments_
 
     def area(self):
-        return poly_area(self.points, poly_segments_to_indices(self.polygon))
+        return poly_area_indexed(self.points, poly_segments_to_indices(self.polygon))
+
+    def getPolyPointList(self):
+        segs = [ s.original_indices for s in self.segments_ ]
+        indicies = poly_segments_to_indices(segs)
+        points = [ self.points[i].transform(self.transform) for i in indicies ]
+        return points
+        
+        

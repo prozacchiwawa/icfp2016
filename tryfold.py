@@ -13,6 +13,18 @@ from polygon import *
 import scipy.spatial
 from scipy.spatial import ConvexHull
 
+def overlaps(points1, points2):
+    print 'points1',points1
+    print 'points2',points2
+    from shapely.geometry import Polygon
+    overlap_area = 0
+    polygon1 = Polygon(points1)
+    polygon2 = Polygon(points2)
+    overlap_area = polygon1.intersection(polygon2).area
+    print "overlap: ", overlap_area
+    print 'epsilon ', epsilon
+    return overlap_area > epsilon
+
 def transform_from_boundary(points,polygon,e1):
     # Points is a list of Point
     # polygon and prototype are lists of Segment
@@ -47,7 +59,7 @@ def isUnitSquare(rational_points):
         l2d = FloatPoint(l2f[1][0]-l2f[0][0],l2f[1][1]-l2f[0][1])
         angle = atan2(l2d[1], l2d[0]) - atan2(l1d[1], l1d[0])
         
-    area = poly_area(rational_points, hull.vertices)
+    area = poly_area_indexed(rational_points, hull.vertices)
     num_points = len(hull_points)
     angle_delta = fmod(angle - (pi/2), 2*pi)
     print "IsSquare: area:", area, "Num Points: ", num_points, "Angle Delta from 90 degrees, in radians: ", angle_delta
@@ -61,6 +73,14 @@ class FoldSpec:
         self.area_ = None
         self.segments_ = None
 
+    def hasOverlap(self):
+        candidate_poly = self.placed[0]
+        current_polys = self.placed[1:]
+        for p in current_polys:
+            if overlaps(p.getPolyPointList(), candidate_poly.getPolyPointList()):
+                return True
+        return False
+                
     def area(self):
         if not self.area_:
             self.area_ = sum([p.area() for p in self.placed])
@@ -233,23 +253,24 @@ class Folder:
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
+            area = u.area()
+            if abs(area - 1.0) < epsilon:
+                points = []
+                segs = [s.segment() for s in u.getSegments()]
+                for s in segs:
+                    points.append(s[0])
+                    points.append(s[1])
+                usq = isUnitSquare(points)
+                if usq:
+                    print 'unit square %s' % points
+                    yield u
+                    return
             unfolds = u.getEdgesInPlay()
             unfold_queue = unfold_queue[1:]
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
-                area = unfolded.area()
-                if abs(area - 1.0) < epsilon:
-                    points = []
-                    segs = [s.segment() for s in unfolded.getSegments()]
-                    for s in segs:
-                        points.append(s[0])
-                        points.append(s[1])
-                    usq = isUnitSquare(points)
-                    if usq:
-                        print 'unit square %s' % points
-                        yield unfolded
-                        return
-                elif area < 1:
+                if unfolded.area() < 1 and not unfolded.hasOverlap():
+                    print "adding ", unfolded
                     unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
