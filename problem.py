@@ -5,6 +5,7 @@ import misc
 from misc import intn
 from svgvis import SVGGallery
 from point import Point
+from segment import Segment
 
 fraction_re_str = '(?P<xn>[-0-9]+)[ \t]*(/[ \t]*(?P<xd>[-0-9]+))?'
 vertex_re_str = '%s,%s' % (fraction_re_str, fraction_re_str.replace('x','y'))
@@ -29,11 +30,11 @@ class Problem(object):
         for vlist in plist:
             for p in vlist:
                 assert( type(p) == Point )
-                assert( type(p[0]) == Fraction )
-                xmin = min(float_of_fract(p[0]), xmin)
-                xmax = max(float_of_fract(p[0]), xmax)
-                ymin = min(float_of_fract(p[1]), ymin)
-                ymax = max(float_of_fract(p[1]), ymax)
+                pf = p.toFloat()
+                xmin = min(pf[0], xmin)
+                xmax = max(pf[0], xmax)
+                ymin = min(pf[1], ymin)
+                ymax = max(pf[1], ymax)
         self.scale = 500 / max(xmax - xmin, ymax - ymin)
         self.xoff = 70 - (self.scale * xmin)
         self.yoff = 70 - (self.scale * ymin)
@@ -42,11 +43,13 @@ class Problem(object):
         xmax = 1
         ymax = 1
         for l in slist:
+            assert( type (l) == Segment )
             for p in [l[0],l[1]]:
-                xmin = min(float_of_fract(p[0]), xmin)
-                xmax = max(float_of_fract(p[0]), xmax)
-                ymin = min(float_of_fract(p[1]), ymin)
-                ymax = max(float_of_fract(p[1]), ymax)
+                pf = p.toFloat()
+                xmin = min(pf[0], xmin)
+                xmax = max(pf[0], xmax)
+                ymin = min(pf[1], ymin)
+                ymax = max(pf[1], ymax)
         self.sscale = 500 / max(xmax - xmin, ymax - ymin)
         self.sx = 640 - (self.sscale * xmin)
         self.sy = 70 - (self.sscale * ymin)
@@ -54,7 +57,7 @@ class Problem(object):
         polygonSegs = []
         for poly in self.plist:
             for i,p in enumerate(poly):
-                polygonSegs.append((p,poly[(i+1)%len(poly)]))
+                polygonSegs.append(Segment(p,poly[(i+1)%len(poly)]))
                 
         self.polygonGlyph = self.svg.addFigure('#974', polygonSegs)
         self.skeletonGlyph = self.svg.addFigure('#a31', self.slist)
@@ -95,7 +98,7 @@ def read(flo):
         by = Fraction(int(m.group('byn')),intn(m.group('byd')))
         a = Point(ax,ay)
         b = Point(bx,by)
-        slist.append((a,b))
+        slist.append(Segment(a,b))
     return Problem(plist, slist)
 
 if __name__ == '__main__':
