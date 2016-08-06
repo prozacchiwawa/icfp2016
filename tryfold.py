@@ -6,6 +6,7 @@ from math import sqrt, fabs, ceil, floor
 from svgvis import SVGGallery
 from point import Point, FloatPoint
 from segment import Segment, FloatSegment, IndexSegment
+import matrix
 from matrix import matrixmult
 
 epsilon = 0.0000001
@@ -126,10 +127,12 @@ def poly_from_boundary(polygon,e1,prototype):
     # e1 is an index in polygon of an edge that has a match in prototype
     
     # Find matching edge in prototype
-    l = polygon[e1]
-    e2 = prototype.index(l)
+    segment = polygon[e1]
+    e2 = prototype.index(segment)
     
+    transform = matrix.reflection(segment)
     
+    return (transform, [s.transform(transform) for s in prototype])
 
 class Folder:
     def __init__(self,p):
