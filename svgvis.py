@@ -1,7 +1,7 @@
 from fract import float_of_fract
 
 class SVGFigure:
-    def __init__(self, slot, color, linesegs, msg=None):
+    def __init__(self, slot, color, linesegs, msg=None, msg_size=55):
         self.xmin = 0
         self.xmax = 1
         self.ymin = 0
@@ -11,6 +11,7 @@ class SVGFigure:
         self.linesegs = linesegs
         self.msg = msg
         self.subfigures = []
+        self.msg_size = msg_size
         
         for seg in linesegs:
             for pt in [seg[0], seg[1]]:
@@ -36,7 +37,7 @@ class SVGFigure:
 
         svg = '\n'.join([self.svgLine(l) for l in self.linesegs])
         if self.msg:
-            svg += '<text x="%d" y="%d" font-family="Verdana" font-size="55">%s</text>' % (self.sx, self.sy + 300, self.msg)
+            svg += '<text x="%d" y="%d" font-family="Verdana" font-size="%d">%s</text>' % (self.sx, self.sy + 300, self.msg_size, self.msg)
         for subf in self.subfigures:
             svg += subf.draw()
         return svg
@@ -52,9 +53,9 @@ class SVGGallery:
     def __init__(self):
         self.figures = []
                          
-    def addFigure(self, color, linesegs, msg=None):
+    def addFigure(self, color, linesegs, msg=None, msg_size=55):
         slot = len(self.figures)
-        fig = SVGFigure(slot, color, linesegs, msg)
+        fig = SVGFigure(slot, color, linesegs, msg, msg_size)
         self.figures.append(fig)
         return fig
 

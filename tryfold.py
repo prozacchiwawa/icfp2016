@@ -170,8 +170,8 @@ class FoldSpec(object):
     def withUnfold(self,poly_idx,tseg):
         pfin = self.folder.poly_finished[poly_idx]
         polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
+
         # Find tseg in polygon
-        
         e1 = polygon.index(tseg.original_indices) if tseg.original_indices in polygon else polygon.index(tseg.original_indices.swap())
         points = self.getPointsList(tseg)
         transform = transform_from_boundary(points,polygon,e1)
@@ -200,7 +200,7 @@ class FoldSpec(object):
                 old = []
                 for p in self.placed:
                     old.extend(p.segments())
-                g.addFigure('#f33', [s.segment() for s in placed_new.segments()])
+                g.addFigure('#f33', [s.segment() for s in placed_new.segments()], tseg, 10)
                 g.appendFigure('#891', [s.segment() for s in old])
                 f.write(g.draw())
                 f.close()
