@@ -80,11 +80,11 @@ class FoldSpec:
         self.composition_ = copy.deepcopy(composition)
         self.minpt = minpt
         self.maxpt = maxpt
-        if not self.area_ in self.composition_:
+        if not self.ownarea_ in self.composition_:
             self.composition_[self.ownarea_] = 1
         else:
             self.composition_[self.ownarea_] += 1
-
+            
     def hasOverlap(self):
         candidate_poly = self.placed[0]
         current_polys = self.placed[1:]
@@ -310,8 +310,9 @@ class Folder:
                     segs = [ s.segment() for s in u.getSegments() ]
                     total_polys = 0
                     print u.composition_
-                    for c in u.composition_.items():
-                        total_polys += sum(c)
+                    for c in u.composition_.values():
+                        total_polys += c
+                    print "placed: ", u.placed, "total_polys", total_polys
                     assert(len(u.placed) == total_polys)
                     genji.addFigure('#000', segs, "%d" % total_polys)
                     gen_outfile.write(genji.draw())
