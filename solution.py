@@ -76,3 +76,27 @@ def makeUnitSquare(segs):
     transform = matrix.translation(-xmin,-ymin)
     segs = [s.transform(transform) for s in squaresegs]
     return segs
+
+# Returns a segment if seg1 and seg2 join or None
+def createLargerSegment(s1,s2):
+    if s1.no_slope() and s2.no_slope():
+        coords = set([s1[0],s1[1],s2[0],s2[1]])
+        if len(coords) == 4:
+            return None
+        
+        points = sorted(coords, key=lambda v: v[1])
+        return Segment(points[0],points[2])
+    elif s1.no_slope() or s2.no_slope():
+        return None
+    elif s1.slope() != s2.slope():
+        return None
+        
+    coords = set([s1[0],s1[1],s2[0],s2[1]])
+    if len(coords) == 4:
+        return None
+
+    points = sorted(coords, key=lambda v: v[0])
+    return Segment(points[0],points[2])
+
+def writeSolution(segs):
+    pass

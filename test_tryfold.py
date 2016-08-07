@@ -112,5 +112,38 @@ class TestIntersect(unittest.TestCase):
         with open("test-sq.svg", 'w') as f:
             f.write(g.draw())
 
+    def test_linejoin(self):
+        points = [
+            Point(Fraction(0),Fraction(0)),
+            Point(Fraction(0),Fraction(1)),
+            Point(Fraction(0),Fraction(2)),
+            Point(Fraction(0),Fraction(3)),
+            Point(Fraction(1),Fraction(1)),
+            Point(Fraction(2),Fraction(2)),
+            Point(Fraction(3),Fraction(3))
+        ]
+        tests = [
+            (None, [
+                Segment(points[0],points[1]),
+                Segment(points[2],points[3])
+            ]),
+            (Segment(points[0],points[2]), [
+                Segment(points[0],points[1]),
+                Segment(points[1],points[2])
+            ]),
+            (Segment(points[0],points[5]), [
+                Segment(points[0],points[4]),
+                Segment(points[4],points[5])
+            ]),
+            (None, [
+                Segment(points[0],points[4]),
+                Segment(points[5],points[6])
+            ])
+        ]
+        for (t_outcome,t_segments) in tests:
+            got = solution.createLargerSegment(t_segments[0],t_segments[1])
+            print 'want',t_outcome,'got',got,'from',t_segments
+            assert t_outcome == got
+
 if __name__ == '__main__':
     unittest.main()
