@@ -67,7 +67,7 @@ def isUnitSquare(rational_points):
     print "IsSquare: area:", area, "Num Points: ", num_points, "Angle Delta from 90 degrees, in radians: ", angle_delta
     return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
-class FoldSpec:
+class FoldSpec(object):
     def __init__(self,folder,points,placed,composition):
         self.folder = folder
         self.points = points
@@ -257,6 +257,22 @@ class Folder:
         # Candidate solutions is a list of lists of polygon indices in self.poly_finished
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
 
+    def edge_check_ok(self, unfolded):
+        assert type(unfolded) == FoldSpec
+        # Check that each poly shares at least 2 points with other polygons
+        # print "unfolded.placed: ", type(unfolded.placed), "(",unfolded.placed,")"
+        for i,p in enumerate(unfolded.placed):
+            other_polys = unfolded.placed[:i] + unfolded.placed[i:]
+            point_share_count = 0
+            for point in p.getPolyPointList():
+                for other_poly in other_polys:
+                    for other_point in other_poly.getPolyPointList():
+                        if point == other_point:
+                            point_share_count += 1
+            if point_share_count < 2:
+                raise("Found disconnected poly! %s" % i)
+        return True
+                
     def unfoldsWithArea1(self, gen_filename, genji):
         from itertools import count
         cnt = count()
@@ -268,7 +284,12 @@ class Folder:
                 with open(("%03d" % next(cnt)) + gen_filename ,'w') as gen_outfile:
                     #seg_i = [ s.original_indices for s in u.getSegments() ]
                     segs = [ s.segment() for s in u.getSegments() ]
-                    genji.addFigure('#000', segs)
+                    total_polys = 0
+                    print u.composition_
+                    for c in u.composition_.items():
+                        total_polys += sum(c)
+                    assert(len(u.placed) == total_polys)
+                    genji.addFigure('#000', segs, "%d" % total_polys)
                     gen_outfile.write(genji.draw())
             area = u.area()
             if abs(area - 1.0) < epsilon:
@@ -286,6 +307,8 @@ class Folder:
             unfold_queue = unfold_queue[1:]
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
+                #if not self.edge_check_ok(unfolded):
+                #    raise("Illegal fold!")
                 if unfolded.area() < 1 and not unfolded.hasOverlap():
                     unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())

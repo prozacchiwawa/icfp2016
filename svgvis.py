@@ -1,7 +1,7 @@
 from fract import float_of_fract
 
 class SVGFigure:
-    def __init__(self, slot, color, linesegs):
+    def __init__(self, slot, color, linesegs, msg=None):
         self.xmin = 0
         self.xmax = 1
         self.ymin = 0
@@ -9,7 +9,8 @@ class SVGFigure:
         self.slot = slot
         self.color = color
         self.linesegs = linesegs
-
+        self.msg = msg
+        
         for seg in linesegs:
             for pt in [seg[0], seg[1]]:
                 self.xmin = min(self.xmin, pt[0])
@@ -27,15 +28,18 @@ class SVGFigure:
         return '<line stroke="%s" stroke-width="2" x1="%s" y1="%s" x2="%s" y2="%s"/>' % (self.color, float_of_fract(a[0], self.sx, self.sscale), float_of_fract(a[1], self.sy, self.sscale), float_of_fract(b[0], self.sx, self.sscale), float_of_fract(b[1], self.sy, self.sscale))
 
     def draw(self):
-        return '\n'.join([self.svgLine(l) for l in self.linesegs])
+        svg = '\n'.join([self.svgLine(l) for l in self.linesegs])
+        if self.msg:
+            svg += '<text x="%d" y="%d" font-family="Verdana" font-size="55">%s</text>' % (self.sx, self.sy + 300, self.msg)
+        return svg
 
 class SVGGallery:
     def __init__(self):
         self.figures = []
                          
-    def addFigure(self, color, linesegs):
+    def addFigure(self, color, linesegs, msg=None):
         slot = len(self.figures)
-        fig = SVGFigure(slot, color, linesegs)
+        fig = SVGFigure(slot, color, linesegs, msg)
         self.figures.append(fig)
         return fig
 
