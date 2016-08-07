@@ -290,9 +290,14 @@ class Folder:
                     genji.addFigure('#000', segs)
                     gen_outfile.write(genji.draw())
             area = u.area()
-            points = []
 
             if abs(area - 1.0) < epsilon:
+                points = []
+                segs = [s.segment() for s in u.getSegments()]
+                for s in segs:
+                    points.append(s[0])
+                    points.append(s[1])
+
                 usq = isUnitSquare(points)
                 if usq:
                     print 'unit square %s' % points
