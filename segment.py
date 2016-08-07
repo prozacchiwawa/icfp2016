@@ -34,6 +34,15 @@ class Segment(tuple):
         diffy = self[1][1] - self[0][1]
         diffx = self[1][0] - self[0][0]
         return sqrt(diffx*diffx + diffy*diffy)
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls,self[0],self[1])
+        
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
     
 class IndexSegment(tuple):
     def __new__(self,a,b):

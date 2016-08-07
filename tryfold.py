@@ -122,7 +122,7 @@ def connected_graph(fs):
         return False
     
 class FoldSpec(object):
-    def __init__(self,folder,points,placed,composition,prevarea,minpt,maxpt):
+    def __init__(self,folder,points,placed,composition,prevarea,minpt,maxpt,outer_edges):
         self.folder = folder
         self.points = points
         self.placed = placed
@@ -133,6 +133,9 @@ class FoldSpec(object):
         self.composition_ = copy.deepcopy(composition)
         self.minpt = minpt
         self.maxpt = maxpt
+        self.outer_edges = copy.deepcopy(outer_edges)
+        print "FoldSpec: outer_edges", self.outer_edges
+        
         if not self.ownarea_ in self.composition_:
             self.composition_[self.ownarea_] = 1
         else:
@@ -176,6 +179,15 @@ class FoldSpec(object):
         points = self.getPointsList(self.placed[placement_idx].points,tseg)
         transform = transform_from_boundary(points,polygon,e1)
         placed_new = TransformedPoly(transform,points,polygon,poly_idx)
+
+        # Important: this does not take into account new
+        # outer edges created by folds from internal segments 
+        # (those fully inside outer bounding polygon)
+        if tseg in self.outer_edges:
+            for edge in placed_new:
+                self.outer_edges.append(edge)
+            # Remove outer edge we just folded across 
+            self.outer_edges.remove(e1/tseg)
         placed_plus = [placed_new] + self.placed
         minpt = self.minpt
         maxpt = self.maxpt
@@ -190,7 +202,7 @@ class FoldSpec(object):
                 if pt[1] > maxpt[1]:
                     maxpt = Point(maxpt[0],pt[1])
 
-        fs = FoldSpec(self.folder,points,placed_plus,self.composition_,self.area_,minpt,maxpt)
+        fs = FoldSpec(self.folder,points,placed_plus,self.composition_,self.area_,minpt,maxpt, self.outer_edges)
 
         #if not edge_check_ok(fs):
         if not connected_graph(fs):
@@ -225,6 +237,19 @@ class Folder:
         self.points = []
         pointset = set([])
         floatPointSet = set([])
+
+        self.initial_outer_edges = []
+        # This outer edge finding will only work on problems with one
+        # "Problem Silhouette" polygon
+        # assert len(self.p.plist) == 1
+        if len(self.p.plist) == 1:
+            for polygon in self.p.plist:
+                for i,p in enumerate(polygon):
+                    p2 = polygon[(i+1) % len(polygon)]
+                    print type(p), p
+                    #outer_edges.append(Segment(Point(p[0],p[1]),Point(p2[0],p2[1])))
+                    self.initial_outer_edges.append(Segment(p,p2))
+        
         for s in self.p.slist:
             print s
             assert type(s) == Segment
@@ -333,7 +358,7 @@ class Folder:
             polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
             minpt = self.points[pfin[i]]
             maxpt = self.points[pfin[i]]
-            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)],{},0,minpt,maxpt))
+            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)],{},0,minpt,maxpt,self.initial_outer_edges))
         return result
 
     def bruteAdjacentMethod(self):
