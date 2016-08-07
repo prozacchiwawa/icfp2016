@@ -134,7 +134,7 @@ class FoldSpec(object):
         self.minpt = minpt
         self.maxpt = maxpt
         self.outer_edges = copy.deepcopy(outer_edges)
-        print "FoldSpec: outer_edges", self.outer_edges
+        #print "FoldSpec: outer_edges", self.outer_edges
         
         if not self.ownarea_ in self.composition_:
             self.composition_[self.ownarea_] = 1
