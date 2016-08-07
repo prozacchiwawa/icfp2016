@@ -315,7 +315,7 @@ class Folder:
             u = unfold_queue[0]
             unfold_queue = unfold_queue[1:]
             if genji:
-                with open(("%03d" % gen_filename ,'w') as gen_outfile:
+                with open("%03d%s" % (next(cnt), gen_filename),'w') as gen_outfile:
                     #seg_i = [ s.original_indices for s in u.getSegments() ]
                     segs = [ s.segment() for s in u.getSegments() ]
                     total_polys = 0
@@ -353,7 +353,7 @@ class Folder:
                 unfolded = u.withUnfold(polygon,segment)
                 if unfolded.area() <= 1 and not unfolded.hasOverlap():
                     unfold_queue = [unfolded] + unfold_queue
-            # unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
+            unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
 if __name__ == '__main__':
     import sys
