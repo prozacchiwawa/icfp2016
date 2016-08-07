@@ -317,8 +317,8 @@ class Folder:
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
                 if unfolded.area() < 1 and not unfolded.hasOverlap():
-                    unfold_queue.append(unfolded)
-            # unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
+                    unfold_queue = [unfolded] + unfold_queue
+            #unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
 if __name__ == '__main__':
     import sys
