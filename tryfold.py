@@ -81,7 +81,46 @@ def edge_check_ok(unfolded):
                 return False
             
     return True
-                
+
+# https://stackoverflow.com/questions/10301000/python-connected-components
+# Does this work on bidirectional graphs?
+def connected_components(neighbors):
+    seen = set()
+    def component(node):
+        nodes = set([node])
+        while nodes:
+            node = nodes.pop()
+            seen.add(node)
+            nodes |= neighbors[node] - seen
+            yield node
+    for node in neighbors:
+        if node not in seen:
+            yield component(node)
+            
+def connected_graph(fs):
+    edges = [ s.segment() for s in fs.getSegments() ]
+    # build graph
+    from collections import defaultdict
+    old_graph = defaultdict(list)
+    for edge in edges:
+        old_graph[edge[0]].append(edge)
+        old_graph[edge[1]].append(edge)
+        
+    # check connectivity
+    components = []
+    new_graph = {node: set(each for edge in edges for each in edge)
+             for node, edges in old_graph.items()}
+    for component in connected_components(new_graph):
+        c = set(component)
+        components.append([edge for edges in old_graph.values()
+                            for edge in edges
+                            if c.intersection(edge)])
+    if len(components) == 1:
+        return True
+    else:
+        print components
+        return False
+    
 class FoldSpec(object):
     def __init__(self,folder,points,placed,composition,prevarea,minpt,maxpt):
         self.folder = folder
@@ -153,7 +192,8 @@ class FoldSpec(object):
 
         fs = FoldSpec(self.folder,points,placed_plus,self.composition_,self.area_,minpt,maxpt)
 
-        if not edge_check_ok(fs):
+        #if not edge_check_ok(fs):
+        if not connected_graph(fs):
             print 'writing fail'
             g = SVGGallery()
             with open('fail.svg','w') as f:
