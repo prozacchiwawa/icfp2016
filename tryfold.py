@@ -268,7 +268,7 @@ class Folder:
                 with open(("%03d" % next(cnt)) + gen_filename ,'w') as gen_outfile:
                     #seg_i = [ s.original_indices for s in u.getSegments() ]
                     segs = [ s.segment() for s in u.getSegments() ]
-                    genji.addFigure('#fff', segs)
+                    genji.addFigure('#000', segs)
                     gen_outfile.write(genji.draw())
             area = u.area()
             if abs(area - 1.0) < epsilon:
