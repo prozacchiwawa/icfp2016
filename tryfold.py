@@ -252,11 +252,19 @@ class Folder:
         # Candidate solutions is a list of lists of polygon indices in self.poly_finished
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
 
-    def unfoldsWithArea1(self):
+    def unfoldsWithArea1(self, gen_filename, genji):
+        from itertools import count
+        cnt = count()
         unfold_queue = self.getRootUnfolds()
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
+            if genji:
+                with open(("%03d" % next(cnt)) + gen_filename ,'w') as gen_outfile:
+                    #seg_i = [ s.original_indices for s in u.getSegments() ]
+                    segs = [ s.segment() for s in u.getSegments() ]
+                    genji.addFigure('#fff', segs)
+                    gen_outfile.write(genji.draw())
             area = u.area()
             if abs(area - 1.0) < epsilon:
                 points = []
@@ -280,12 +288,19 @@ class Folder:
 if __name__ == '__main__':
     import sys
     if len(sys.argv) == 1:
-        print 'usage: tryfold.py [prob] [svg?]'
+        print 'usage: tryfold.py [prob] [svg?] [gen_svgs?]'
         sys.exit(1)
     p = problem.read(open(sys.argv[1]))
     f = Folder(p)
     g = SVGGallery()
-    candidates = f.unfoldsWithArea1()
+    genji = SVGGallery()
+    
+    candidates = []
+    if len(sys.argv) > 3:
+        candidates = f.unfoldsWithArea1(sys.argv[3], genji)
+    else:
+        candidates = f.unfoldsWithArea1(None, None)
+
     for sol in candidates:
         segs = [s.segment() for s in sol.getSegments()]
         segs = solution.makeUnitSquare(segs)
@@ -295,3 +310,4 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         with open(sys.argv[2],'w') as outf:
             outf.write(g.draw())
+
