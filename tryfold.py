@@ -68,7 +68,21 @@ def isUnitSquare(rational_points):
     print "IsSquare: area:", area, "Num Points: ", num_points, "Angle Delta from 90 degrees, in radians: ", angle_delta
     return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
-class FoldSpec:
+def edge_check_ok(unfolded):
+    assert type(unfolded) == FoldSpec
+    # Check that each poly shares at least 2 points with other polygons
+    # print "unfolded.placed: ", type(unfolded.placed), "(",unfolded.placed,")"
+    for i,p in enumerate(unfolded.placed):
+        points_i = set(p.getPolyPointList())
+        for j in range(i+1,len(unfolded.placed)):
+            points_j = set(unfolded.placed[j].getPolyPointList())
+            points_both = points_j.intersection(points_i)
+            if len(points_j) < 2:
+                return False
+            
+    return True
+                
+class FoldSpec(object):
     def __init__(self,folder,points,placed,composition,prevarea,minpt,maxpt):
         self.folder = folder
         self.points = points
@@ -112,11 +126,7 @@ class FoldSpec:
         return self.segments_
 
     def getPointsList(self,tseg):
-        if tseg in self.points_:
-            return self.points_[tseg]
-        else:
-            self.points_[tseg] = res = [p.transform(tseg.transform) for p in self.points]
-            return res
+        return [p.transform(tseg.transform) for p in self.points]
 
     def withUnfold(self,poly_idx,tseg):
         pfin = self.folder.poly_finished[poly_idx]
@@ -126,7 +136,8 @@ class FoldSpec:
         e1 = polygon.index(tseg.original_indices) if tseg.original_indices in polygon else polygon.index(tseg.original_indices.swap())
         points = self.getPointsList(tseg)
         transform = transform_from_boundary(points,polygon,e1)
-        placed_plus = [TransformedPoly(transform,points,polygon,poly_idx)] + self.placed
+        placed_new = TransformedPoly(transform,points,polygon,poly_idx)
+        placed_plus = [placed_new] + self.placed
         minpt = self.minpt
         maxpt = self.maxpt
         for pt_ in polygon:
@@ -140,7 +151,22 @@ class FoldSpec:
                 if pt[1] > maxpt[1]:
                     maxpt = Point(maxpt[0],pt[1])
 
-        return FoldSpec(self.folder,points,placed_plus,self.composition_,self.area_,minpt,maxpt)
+        fs = FoldSpec(self.folder,points,placed_plus,self.composition_,self.area_,minpt,maxpt)
+
+        if not edge_check_ok(fs):
+            print 'writing fail'
+            g = SVGGallery()
+            with open('fail.svg','w') as f:
+                old = []
+                for p in self.placed:
+                    old.extend(p.segments())
+                g.addFigure('#f33', [s.segment() for s in placed_new.segments()])
+                g.appendFigure('#891', [s.segment() for s in old])
+                f.write(g.draw())
+                f.close()
+            raise("Illegal fold!")
+
+        return fs
 
 class Folder:
     def __init__(self,p):
@@ -279,22 +305,6 @@ class Folder:
         # Candidate solutions is a list of lists of polygon indices in self.poly_finished
         # poly_connections is a dict of IndexSegment to set(polygon index) specifying connectivity
 
-    def edge_check_ok(self, unfolded):
-        assert type(unfolded) == FoldSpec
-        # Check that each poly shares at least 2 points with other polygons
-        # print "unfolded.placed: ", type(unfolded.placed), "(",unfolded.placed,")"
-        for i,p in enumerate(unfolded.placed):
-            other_polys = unfolded.placed[:i] + unfolded.placed[i:]
-            point_share_count = 0
-            for point in p.getPolyPointList():
-                for other_poly in other_polys:
-                    for other_point in other_poly.getPolyPointList():
-                        if point == other_point:
-                            point_share_count += 1
-            if point_share_count < 2:
-                raise("Found disconnected poly! %s" % i)
-        return True
-                
     def unfoldsWithArea1(self, gen_filename, genji):
         from itertools import count
         cnt = count()
@@ -305,7 +315,7 @@ class Folder:
             u = unfold_queue[0]
             unfold_queue = unfold_queue[1:]
             if genji:
-                with open(("%03d" % next(cnt)) + gen_filename ,'w') as gen_outfile:
+                with open(("%03d" % gen_filename ,'w') as gen_outfile:
                     #seg_i = [ s.original_indices for s in u.getSegments() ]
                     segs = [ s.segment() for s in u.getSegments() ]
                     total_polys = 0
@@ -341,11 +351,9 @@ class Folder:
             unfolds = u.getEdgesInPlay()
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
-                #if not self.edge_check_ok(unfolded):
-                #    raise("Illegal fold!")
                 if unfolded.area() <= 1 and not unfolded.hasOverlap():
-                    unfold_queue.append(unfolded)
-            unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
+                    unfold_queue = [unfolded] + unfold_queue
+            # unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
 if __name__ == '__main__':
     import sys
