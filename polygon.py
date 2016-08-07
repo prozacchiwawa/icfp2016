@@ -6,7 +6,7 @@ from shapely.geometry import Polygon
 
 def triangle_area(a,b,c):
     p = (a+b+c) / 2
-    return sqrt(p * (p - a) * (p - b) * (p - c))
+    return sqrt(max(0,p * (p - a) * (p - b) * (p - c)))
 
 # 
 # Thanks http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect

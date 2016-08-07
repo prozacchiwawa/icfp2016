@@ -319,7 +319,7 @@ class Folder:
             unfolds = u.getEdgesInPlay()
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
-                if unfolded.area() < 1 and not unfolded.hasOverlap():
+                if unfolded.area() <= 1 and not unfolded.hasOverlap():
                     unfold_queue.append(unfolded)
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
