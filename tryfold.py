@@ -12,19 +12,16 @@ from basic import epsilon
 from polygon import *
 import solution
 import copy
+import area
 import scipy.spatial
 from scipy.spatial import ConvexHull
 
 def overlaps(points1, points2):
-    print 'points1',points1
-    print 'points2',points2
     from shapely.geometry import Polygon
     overlap_area = 0
     polygon1 = Polygon(points1)
     polygon2 = Polygon(points2)
     overlap_area = polygon1.intersection(polygon2).area
-    print "overlap: ", overlap_area
-    print 'epsilon ', epsilon
     return overlap_area > epsilon
 
 def transform_from_boundary(points,polygon,e1):
@@ -56,7 +53,6 @@ def isUnitSquare(rational_points):
     else:
         l1f = line1.toFloat()
         l2f = line2.toFloat()
-        print "lines %s %s" % (l1f, l2f)
         l1d = FloatPoint(l1f[1][0]-l1f[0][0],l1f[1][1]-l1f[0][1])
         l2d = FloatPoint(l2f[1][0]-l2f[0][0],l2f[1][1]-l2f[0][1])
         angle = atan2(l2d[1], l2d[0]) - atan2(l1d[1], l1d[0])
@@ -68,15 +64,17 @@ def isUnitSquare(rational_points):
     return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
 class FoldSpec:
-    def __init__(self,folder,points,placed,composition):
+    def __init__(self,folder,points,placed,composition,prevarea,minpt,maxpt):
         self.folder = folder
         self.points = points
         self.placed = placed
         self.points_ = {}
         self.ownarea_ = self.placed[0].area()
-        self.area_ = sum([p.area() for p in self.placed[1:]]) + self.ownarea_
+        self.area_ = prevarea + self.ownarea_
         self.segments_ = None
         self.composition_ = copy.deepcopy(composition)
+        self.minpt = minpt
+        self.maxpt = maxpt
         if not self.area_ in self.composition_:
             self.composition_[self.ownarea_] = 1
         else:
@@ -124,7 +122,20 @@ class FoldSpec:
         points = self.getPointsList(tseg)
         transform = transform_from_boundary(points,polygon,e1)
         placed_plus = [TransformedPoly(transform,points,polygon,poly_idx)] + self.placed
-        return FoldSpec(self.folder,points,placed_plus,self.composition_)
+        minpt = self.minpt
+        maxpt = self.maxpt
+        for pt_ in polygon:
+            for pt in [points[pt_[0]].transform(transform),points[pt_[1]].transform(transform)]:
+                if pt[0] < minpt[0]:
+                    minpt = Point(pt[0],minpt[1])
+                if pt[0] > maxpt[0]:
+                    maxpt = Point(pt[0],maxpt[1])
+                if pt[1] < minpt[1]:
+                    minpt = Point(minpt[0],pt[1])
+                if pt[1] > maxpt[1]:
+                    maxpt = Point(maxpt[0],pt[1])
+
+        return FoldSpec(self.folder,points,placed_plus,self.composition_,self.area_,minpt,maxpt)
 
 class Folder:
     def __init__(self,p):
@@ -217,6 +228,10 @@ class Folder:
                     self.poly_connections[IndexSegment(line[1],line[0])].add(pi)
         print self.poly_connections
 
+        self.areas = [Polygon([self.points[pt] for pt in p]).area for p in self.poly_finished]
+        self.asolver = area.AreaSolver(self.areas,1.0)
+        print 'asolver %s %s' % (self.asolver.good, self.asolver.avect)
+
     def getAdjacent(self,iseg):
         if iseg in self.poly_connections:
             return self.poly_connections[iseg]
@@ -227,7 +242,9 @@ class Folder:
         result = []
         for pfin in self.poly_finished:
             polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
-            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)],{}))
+            minpt = self.points[pfin[i]]
+            maxpt = self.points[pfin[i]]
+            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)],{},0,minpt,maxpt))
         return result
 
     def bruteAdjacentMethod(self):
@@ -259,28 +276,36 @@ class Folder:
 
     def unfoldsWithArea1(self):
         unfold_queue = self.getRootUnfolds()
+        s2 = sqrt(2)
         while len(unfold_queue):
             print len(unfold_queue)
             u = unfold_queue[0]
+            unfold_queue = unfold_queue[1:]
             area = u.area()
+            points = []
+
             if abs(area - 1.0) < epsilon:
-                points = []
-                segs = [s.segment() for s in u.getSegments()]
-                for s in segs:
-                    points.append(s[0])
-                    points.append(s[1])
                 usq = isUnitSquare(points)
                 if usq:
                     print 'unit square %s' % points
                     yield u
                     return
+
+            if u.maxpt[0] - u.minpt[0] > s2 and u.maxpt[1] - u.minpt[1] > s2:
+                print 'exceeded %s,%s' % (u.maxpt[0] - u.minpt[0], u.maxpt[1] - u.minpt[1])
+                continue
+            
+            composition = [pair for pair in u.composition_.iteritems()]
+            if not self.asolver.satisfies(composition):
+                print 'composition %s unsatisfiable' % (composition)
+                continue
+
             unfolds = u.getEdgesInPlay()
-            unfold_queue = unfold_queue[1:]
             for (polygon,segment) in unfolds:
                 unfolded = u.withUnfold(polygon,segment)
                 if unfolded.area() < 1 and not unfolded.hasOverlap():
                     unfold_queue.append(unfolded)
-            unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
+            # unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
 if __name__ == '__main__':
     import sys

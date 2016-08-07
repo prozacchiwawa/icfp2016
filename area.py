@@ -7,7 +7,6 @@ class ACoef(list):
         super(ACoef,self).__init__(self)
         self.extend([0 for v in vals])
         self.caps = [floor(target/v) for v in vals]
-        print self.caps
         
     def incr(self):
         carry = 1
@@ -54,7 +53,6 @@ class AreaSolver:
 
     def satisfies(self,copies):
         val = self.target - sum([c * a for (c,a) in copies])
-        print val
         if val < 0:
             return False
         return AreaSolver(self.areas,val).good
