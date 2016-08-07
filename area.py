@@ -1,5 +1,6 @@
 from math import floor, ceil
 from fractions import Fraction, gcd
+from basic import epsilon
 
 class ACoef(list):
     def __init__(self,vals,target):
@@ -27,7 +28,7 @@ class AreaSolver:
         return sum([m * a for (m,a) in zip(m,adv)])
 
     def isSolution(self,m,adv):
-        return (self.evalValues(self.areas,self.avect) - self.target) == 0
+        return abs(self.evalValues(self.areas,self.avect) - self.target) < epsilon
 
     def __init__(self,areas,target):
         self.areas = sorted(areas, key=lambda a: -a)
