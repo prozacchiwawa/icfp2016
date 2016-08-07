@@ -7,30 +7,23 @@ class SVGFigure:
         self.ymin = 0
         self.ymax = 1
         self.slot = slot
-        self.color = color
-        self.linesegs = linesegs
+        self.linesegs = [(l[0],l[1],color) for l in linesegs]
         self.msg = msg
-        self.subfigures = []
         self.msg_size = msg_size
-        
-        for seg in linesegs:
+
+    def svgLine(self,l):
+        a = l[0]
+        b = l[1]
+        return '<line stroke="%s" stroke-width="2" x1="%s" y1="%s" x2="%s" y2="%s"/>' % (l[2], float_of_fract(a[0], self.sx, self.sscale), float_of_fract(a[1], self.sy, self.sscale), float_of_fract(b[0], self.sx, self.sscale), float_of_fract(b[1], self.sy, self.sscale))
+
+    def draw(self):        
+        for seg in self.linesegs:
             for pt in [seg[0], seg[1]]:
                 self.xmin = min(self.xmin, pt[0])
                 self.xmax = max(self.xmax, pt[0])
                 self.ymin = min(self.ymin, pt[1])
                 self.ymax = max(self.ymax, pt[1])
 
-    def svgLine(self,l):
-        a = l[0]
-        b = l[1]
-        return '<line stroke="%s" stroke-width="2" x1="%s" y1="%s" x2="%s" y2="%s"/>' % (self.color, float_of_fract(a[0], self.sx, self.sscale), float_of_fract(a[1], self.sy, self.sscale), float_of_fract(b[0], self.sx, self.sscale), float_of_fract(b[1], self.sy, self.sscale))
-
-    def draw(self):
-        self.xmin = min([self.xmin] + [sub.xmin for sub in self.subfigures])
-        self.xmax = max([self.xmax] + [sub.xmax for sub in self.subfigures])
-        self.ymin = min([self.ymin] + [sub.ymin for sub in self.subfigures])
-        self.ymax = max([self.ymax] + [sub.ymax for sub in self.subfigures])
-        
         self.sscale = 500 / max(self.xmax - self.xmin, self.ymax - self.ymin)
         self.sx = (self.slot * 500 + (self.slot + 1) * 70) - (self.sscale * self.xmin)
         self.sy = 70 - (self.sscale * self.ymin)
@@ -38,16 +31,10 @@ class SVGFigure:
         svg = '\n'.join([self.svgLine(l) for l in self.linesegs])
         if self.msg:
             svg += '<text x="%d" y="%d" font-family="Verdana" font-size="%d">%s</text>' % (self.sx, self.sy + 300, self.msg_size, self.msg)
-        for subf in self.subfigures:
-            svg += subf.draw()
         return svg
 
-    def addSubfigure(self,fig):
-        fig.xmin = min(self.xmin, fig.xmin)
-        fig.xmax = min(self.xmax, fig.xmax)
-        fig.ymin = min(self.ymin, fig.ymin)
-        fig.xmax = min(self.ymax, fig.ymax)
-        self.subfigures.append(fig)
+    def addSubfigure(self,color,fig):
+        self.linesegs.extend([(f[0],f[1],color) for f in fig])
 
 class SVGGallery:
     def __init__(self):
@@ -61,7 +48,7 @@ class SVGGallery:
 
     def appendFigure(self,color, linesegs):
         slot = len(self.figures) - 1
-        self.figures[slot].addSubfigure(SVGFigure(slot, color, linesegs))
+        self.figures[slot].addSubfigure(color, linesegs)
 
     def draw(self):
         bodies = map(lambda x: x.draw(), self.figures)

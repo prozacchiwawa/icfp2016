@@ -150,11 +150,11 @@ class FoldSpec(object):
         return self.area_
 
     def getEdgesInPlay(self):
-        for p in self.placed:
+        for i, p in enumerate(self.placed):
             for s in p.segments():
                 adjacent = self.folder.getAdjacent(s.original_indices)
                 for a in adjacent:
-                    yield (a,s) # Polygon index, transformed segment
+                    yield (a,s,i) # Polygon index, transformed segment, placement idx
 
     def getSegments(self):
         if self.segments_:
@@ -164,16 +164,16 @@ class FoldSpec(object):
             self.segments_.extend(f.segments())
         return self.segments_
 
-    def getPointsList(self,tseg):
-        return [p.transform(tseg.transform) for p in self.points]
+    def getPointsList(self,points,tseg):
+        return [p.transform(tseg.transform) for p in points]
 
-    def withUnfold(self,poly_idx,tseg):
+    def withUnfold(self,poly_idx,tseg,placement_idx):
         pfin = self.folder.poly_finished[poly_idx]
         polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
 
         # Find tseg in polygon
         e1 = polygon.index(tseg.original_indices) if tseg.original_indices in polygon else polygon.index(tseg.original_indices.swap())
-        points = self.getPointsList(tseg)
+        points = self.getPointsList(self.placed[placement_idx].points,tseg)
         transform = transform_from_boundary(points,polygon,e1)
         placed_new = TransformedPoly(transform,points,polygon,poly_idx)
         placed_plus = [placed_new] + self.placed
@@ -202,6 +202,16 @@ class FoldSpec(object):
                     old.extend(p.segments())
                 g.addFigure('#f33', [s.segment() for s in placed_new.segments()], tseg, 10)
                 g.appendFigure('#891', [s.segment() for s in old])
+                reflectSeg = (points[polygon[e1][0]],points[polygon[e1][1]])
+                g.appendFigure('#731', [reflectSeg])
+                probsegs = self.folder.segmentsOfPoly(poly_idx)
+                poly_verts = ["%s,%s" % (p[0],p[1]) for p in [self.folder.points[i] for i in self.folder.poly_finished[poly_idx]]]
+                print "guilty poly %s" % poly_verts
+                print "tseg original %s,%s" % (tseg.points[tseg.original_indices[0]], tseg.points[tseg.original_indices[1]])
+                print "tseg figure %s,%s" % (points[tseg.original_indices[0]], tseg.points[tseg.original_indices[1]])
+                print ("e1 ", e1, polygon, polygon[e1])
+                print ("So reflect about edge", reflectSeg)
+                g.addFigure('#33e', probsegs)
                 f.write(g.draw())
                 f.close()
             raise("Illegal fold!")
@@ -303,6 +313,14 @@ class Folder:
         self.asolver = area.AreaSolver(self.areas,1.0)
         print 'asolver %s %s' % (self.asolver.good, self.asolver.avect)
 
+    def segmentsOfPoly(self,poly_idx):
+        result = []
+        poly_len = len(self.poly_finished[poly_idx])
+        poly = self.poly_finished[poly_idx]
+        for i,p in enumerate(poly):
+            result.append(Segment(self.points[poly[i]],self.points[poly[(i+1)%poly_len]]))
+        return result
+
     def getAdjacent(self,iseg):
         if iseg in self.poly_connections:
             return self.poly_connections[iseg]
@@ -389,8 +407,8 @@ class Folder:
                 continue
 
             unfolds = u.getEdgesInPlay()
-            for (polygon,segment) in unfolds:
-                unfolded = u.withUnfold(polygon,segment)
+            for (polygon,segment,pidx) in unfolds:
+                unfolded = u.withUnfold(polygon,segment,pidx)
                 if unfolded.area() <= 1 and not unfolded.hasOverlap():
                     unfold_queue = [unfolded] + unfold_queue
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
