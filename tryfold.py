@@ -438,6 +438,11 @@ class Folder:
                     unfold_queue = [unfolded] + unfold_queue
             unfold_queue = sorted(unfold_queue, key=lambda u: -u.area())
 
+def applyTransforms(transforms,seg):
+    for t in transforms:
+        seg = seg.transform(t)
+    return seg
+    
 if __name__ == '__main__':
     import sys
     if len(sys.argv) == 1:
@@ -449,16 +454,31 @@ if __name__ == '__main__':
     genji = SVGGallery()
     
     candidates = []
+    solcount = 0
     if len(sys.argv) > 3:
         candidates = f.unfoldsWithArea1(sys.argv[3], genji)
     else:
         candidates = f.unfoldsWithArea1(None, None)
 
-    for sol in candidates:
-        segs = [s.segment() for s in sol.getSegments()]
-        segs = solution.makeUnitSquare(segs)
-        print 'r %s' % segs
-        g.addFigure('#459', segs)
+    for i, sol in enumerate(candidates):
+        unitsegs, transforms = solution.makeUnitSquare([s.segment() for s in sol.getSegments()])
+        g.addFigure('#459', unitsegs)
+
+        polygons = []
+        for p in sol.placed:
+            segments_with_indices = p.segments()
+            segs = [s.segment() for s in segments_with_indices]
+            print 'segs',segs
+            idxs = [s.original_indices for s in segments_with_indices]
+            print 'idxs',idxs
+            transformed = [applyTransforms(transforms, s) for s in segs]
+            print 'transformed',
+            pres = solution.Polygon(idxs, transformed)
+            polygons.append(pres)
+        solution = solution.writeSolution(f.points, polygons)
+        print solution
+        with open('%s.%s' % (sys.argv[1],i),'w') as solf:
+            solf.write(solution)
 
     if len(sys.argv) > 2:
         with open(sys.argv[2],'w') as outf:

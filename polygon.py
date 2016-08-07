@@ -126,6 +126,9 @@ def poly_segments_to_indices(polygon):
             if p[0] == last:
                 last = p[1]
                 index_chain.append(p[0])
+            elif p[1] == last:
+                last = p[0]
+                index_chain.append(p[1])
     return index_chain
 
 class TransformedSegment:
