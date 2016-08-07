@@ -48,6 +48,8 @@ def makeUnitSquare(segs):
         ymaxline = sorted(filter(lambda x: x[1] == ymax, ysorted), key=lambda p: p[0])
         xmin = yminline[0]
         xmax = ymaxline[0]
+        if xmin == xmax:
+            raise("What to do here?")
         slope = Segment(xmin,xmax).slope()
         shearY = [[1,Fraction(-1,slope),0],[0,1,0],[0,0,1]]
         segshear = [s.transform(shearY) for s in segshear]
