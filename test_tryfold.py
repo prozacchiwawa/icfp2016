@@ -59,7 +59,7 @@ class TestIntersect(unittest.TestCase):
     def test_overlap_cull11(self):
         p = problem.read(open('./prob/prob11.prob'))
         f = Folder(p)
-        rootfold = f.getRootUnfold()
+        rootfold = f.getRootUnfolds()[0]
         vlist = filter(lambda x: x[1].original_indices == IndexSegment(4,5), [x for x in rootfold.getEdgesInPlay()])
         g = SVGGallery()
         for v in vlist:

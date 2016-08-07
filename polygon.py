@@ -2,6 +2,7 @@ from segment import FloatSegment, Segment, IndexSegment
 from point import FloatPoint, Point
 from math import sqrt, fabs
 from basic import epsilon
+from shapely.geometry import Polygon
 
 def triangle_area(a,b,c):
     p = (a+b+c) / 2

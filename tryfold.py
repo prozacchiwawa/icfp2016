@@ -11,6 +11,7 @@ from matrix import matrixmult
 from basic import epsilon
 from polygon import *
 import solution
+import copy
 import scipy.spatial
 from scipy.spatial import ConvexHull
 
@@ -67,13 +68,19 @@ def isUnitSquare(rational_points):
     return area == 1 and num_points == 4 and abs(angle_delta) < epsilon
 
 class FoldSpec:
-    def __init__(self,folder,points,placed):
+    def __init__(self,folder,points,placed,composition):
         self.folder = folder
         self.points = points
         self.placed = placed
         self.points_ = {}
-        self.area_ = None
+        self.ownarea_ = self.placed[0].area()
+        self.area_ = sum([p.area() for p in self.placed[1:]]) + self.ownarea_
         self.segments_ = None
+        self.composition_ = copy.deepcopy(composition)
+        if not self.area_ in self.composition_:
+            self.composition_[self.ownarea_] = 1
+        else:
+            self.composition_[self.ownarea_] += 1
 
     def hasOverlap(self):
         candidate_poly = self.placed[0]
@@ -84,8 +91,6 @@ class FoldSpec:
         return False
                 
     def area(self):
-        if not self.area_:
-            self.area_ = sum([p.area() for p in self.placed])
         return self.area_
 
     def getEdgesInPlay(self):
@@ -119,7 +124,7 @@ class FoldSpec:
         points = self.getPointsList(tseg)
         transform = transform_from_boundary(points,polygon,e1)
         placed_plus = [TransformedPoly(transform,points,polygon,poly_idx)] + self.placed
-        return FoldSpec(self.folder,points,placed_plus)
+        return FoldSpec(self.folder,points,placed_plus,self.composition_)
 
 class Folder:
     def __init__(self,p):
@@ -222,7 +227,7 @@ class Folder:
         result = []
         for pfin in self.poly_finished:
             polygon = [IndexSegment(pfin[i],pfin[(i+1)%len(pfin)]) for i in range(len(pfin))]
-            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)]))
+            result.append(FoldSpec(self,self.points,[TransformedPoly(matrix.identity, self.points, polygon, 0)],{}))
         return result
 
     def bruteAdjacentMethod(self):
