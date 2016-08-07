@@ -6,6 +6,7 @@ from point import Point
 from fractions import Fraction
 import matrix
 import problem
+import solution
 from svgvis import SVGGallery
 
 class TestIntersect(unittest.TestCase):
@@ -32,7 +33,7 @@ class TestIntersect(unittest.TestCase):
         p = problem.read(open('./prob/prob12.prob'))
         f = Folder(p)
         rootfold = f.getRootUnfolds()[0]
-        unfolds = [rootfold.withUnfold(x[0],x[1]) for x in rootfold.getEdgesInPlay()]
+        unfolds = [rootfold.withUnfold(x[0],x[1],0) for x in rootfold.getEdgesInPlay()]
         best = filter(lambda x: x.area() == 1, unfolds)[0]
         segs = best.getSegments()
         g = SVGGallery()
@@ -48,7 +49,7 @@ class TestIntersect(unittest.TestCase):
         vlist = filter(lambda x: x[1].original_indices == IndexSegment(4,5), [x for x in rootfold.getEdgesInPlay()])
         g = SVGGallery()
         for v in vlist:
-            unfold = rootfold.withUnfold(v[0],v[1])
+            unfold = rootfold.withUnfold(v[0],v[1],0)
             print 'area %s %s' % (unfold.area(), v)
             print [x.segment() for x in unfold.getSegments()]
             g.addFigure('#c54',[s.segment() for s in unfold.getSegments()])
@@ -63,7 +64,7 @@ class TestIntersect(unittest.TestCase):
         vlist = filter(lambda x: x[1].original_indices == IndexSegment(4,5), [x for x in rootfold.getEdgesInPlay()])
         g = SVGGallery()
         for v in vlist:
-            unfold = rootfold.withUnfold(v[0],v[1])
+            unfold = rootfold.withUnfold(v[0],v[1],0)
             overlap = unfold.hasOverlap()
             if overlap:
                 color = '#F00'
@@ -75,6 +76,41 @@ class TestIntersect(unittest.TestCase):
         f = open('overlap.svg','w')
         f.write(g.draw())
         f.close()
+
+    def test_makeUnitSquare(self):
+        points = [
+            Point(Fraction(0),Fraction(3)),
+            Point(Fraction(3),Fraction(7)),
+            Point(Fraction(7),Fraction(4)),
+            Point(Fraction(4),Fraction(0)),
+            Point(Fraction(1),Fraction(9,4)),
+            Point(Fraction(1),Fraction(13,3))
+        ]
+        segs = [
+            Segment(points[0],points[4]),
+            Segment(points[4],points[5]),
+            Segment(points[5],points[0]),
+            Segment(points[5],points[1]),
+            Segment(points[1],points[2]),
+            Segment(points[2],points[3]),
+            Segment(points[3],points[4]),
+            Segment(points[4],points[5])
+        ]
+        g = SVGGallery()
+        g.addFigure("#333", segs)
+
+        segs = solution.makeUnitSquare(segs)
+        g.addFigure("#090", segs)
+
+        segs = [Segment(Point(s[0][0],s[0][1]),Point(s[1][0],s[1][1])) for s in 
+                ((Fraction(4, 3), Fraction(1, 3)), (Fraction(4, 3), Fraction(4, 3))), ((Fraction(4, 3), Fraction(4, 3)), (Fraction(1, 3), Fraction(4, 3))), ((Fraction(1, 3), Fraction(4, 3)), (Fraction(1, 3), Fraction(1, 1))), ((Fraction(1, 3), Fraction(1, 1)), (Fraction(1, 1), Fraction(1, 3))), ((Fraction(1, 1), Fraction(1, 3)), (Fraction(4, 3), Fraction(1, 3))), ((Fraction(1, 3), Fraction(1, 3)), (Fraction(1, 3), Fraction(1, 1))), ((Fraction(1, 3), Fraction(1, 1)), (Fraction(1, 1), Fraction(1, 3))), ((Fraction(1, 1), Fraction(1, 3)), (Fraction(1, 3), Fraction(1, 3)))]
+
+        g.addFigure('#e32', segs)
+        segs = solution.makeUnitSquare(segs)
+        g.addFigure('#33e', segs)
+
+        with open("test-sq.svg", 'w') as f:
+            f.write(g.draw())
 
 if __name__ == '__main__':
     unittest.main()
