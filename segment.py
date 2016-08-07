@@ -30,6 +30,11 @@ class Segment(tuple):
     def transform(self,mat):
         return Segment(self[0].transform(mat), self[1].transform(mat))
 
+    def length(self):
+        diffy = self[1][1] - self[0][1]
+        diffx = self[1][0] - self[0][0]
+        return sqrt(diffx*diffx + diffy*diffy)
+    
 class IndexSegment(tuple):
     def __new__(self,a,b):
         assert type(a) == type(0)
